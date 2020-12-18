@@ -8,22 +8,34 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.theseed.dl4j.train.ITrainReporter;
+import org.theseed.dl4j.train.SearchProcessor;
 import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.io.LineReader;
+import org.theseed.jfx.BackgroundTask;
+import org.theseed.jfx.IBackgroundController;
 import org.theseed.jfx.PreferenceSet;
 import org.theseed.jfx.ResizableController;
+import org.theseed.utils.ICommand;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
@@ -34,7 +46,7 @@ import javafx.stage.Stage;
  * @author Bruce Parrello
  *
  */
-public class TrainingManager extends ResizableController  {
+public class TrainingManager extends ResizableController implements ITrainReporter, IBackgroundController  {
 
     // FIELDS
     /** current model directory */
@@ -43,6 +55,32 @@ public class TrainingManager extends ResizableController  {
     private TrainingProcessor.Type modelType;
     /** current model's parameter file */
     private File parmFile;
+    /** number of epochs displayed (owned by platform thread) */
+    private int numDisplayed;
+    /** number of epochs queued (owned by background thread) */
+    private int numSubmitted;
+    /** current background task */
+    private BackgroundTask backgrounder;
+    /** current progress bar background color */
+    private Color barColor;
+    /** pattern for finding line terminators in log messages */
+    public static final Pattern LINE_END = Pattern.compile("\\r?\\n");
+    /** system line separator */
+    public static final String LINE_SEP = System.getProperty("line.separator");
+    /** upper limit for progress bar */
+    private static final double LOG10_UPPER = 1;
+    /** lower limit for progress bar */
+    private static final double LOG10_LOWER = -10;
+    /** minimum displayable score */
+    private static final double MIN_SCORE = Math.pow(10.0, LOG10_LOWER);
+    /** color for a score over 1.0 */
+    private static final Color BAD_COLOR = Color.RED;
+    /** color for a score from 0.1 to 1.0 */
+    private static final Color WARN_COLOR = Color.ORANGE;
+    /** normal color */
+    private static final Color NORMAL_COLOR = Color.TURQUOISE;
+    /** good color */
+    private static final Color GOOD_COLOR = Color.LIGHTGREEN;
 
     // CONTROLS
 
@@ -124,6 +162,25 @@ public class TrainingManager extends ResizableController  {
         return "DL4J Training Manager";
     }
 
+
+    public void init() {
+        // Denote there is no background task running.
+        this.backgrounder = null;
+        // Get the last-saved model directory.
+        String dirName = this.getPref("modelDirectory", "");
+        File newDir = null;
+        if (! dirName.isEmpty())
+            newDir = new File(dirName);
+        try {
+            boolean ok = this.analyzeModelDirectory(newDir);
+            if (! ok)
+                this.modelDirectory = null;
+        } catch (IOException e) {
+            this.setState(false);
+            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.getMessage());
+        }
+    }
+
     /**
      * Process a request for a new model directory.  If the directory is updated,
      * we will set up for the new model.
@@ -163,21 +220,68 @@ public class TrainingManager extends ResizableController  {
         }
     }
 
-    @Override
-    public void init(String[] parms) {
-        // Get the last-saved model directory.
-        String dirName = this.getPref("modelDirectory", "");
-        File newDir = null;
-        if (! dirName.isEmpty())
-            newDir = new File(dirName);
+    /**
+     * Button event to bring up the parameter dialog and run a training search if it is successful.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    private void runSearch(ActionEvent event) {
         try {
-            boolean ok = this.analyzeModelDirectory(newDir);
-            if (! ok)
-                this.modelDirectory = null;
+            Stage dialogStage = new Stage();
+            ParmDialog dialog = (ParmDialog) PreferenceSet.loadFXML("ParmDialog", dialogStage);
+            dialog.init(this.parmFile, this.modelType);
+            dialogStage.showAndWait();
+            if (dialog.getResult()) {
+                ICommand processor = new SearchProcessor(this);
+                String[] parms = new String[] { "-t", this.modelType.toString(), this.modelDirectory.toString() };
+                executeCommand(processor, "SEARCH", parms);
+            }
         } catch (IOException e) {
-            this.setState(false);
-            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.getMessage());
+            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Loading Parameter Dialog", e.getMessage());
         }
+    }
+
+    /**
+     * Button event to display the log view.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    private void viewLog(ActionEvent event) {
+        try {
+            Stage logStage = new Stage();
+            LogViewer logViewer = (LogViewer) PreferenceSet.loadFXML("LogViewer", logStage);
+            File logFile = new File(this.modelDirectory, "trials.log");
+            logViewer.init(logFile, this.txtModelDirectory.getText());
+            logStage.show();
+        } catch (IOException e) {
+            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Loading Log Viewer", e.getMessage());
+        }
+    }
+
+    /**
+     * Button event to display the results.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    private void showModelResults(ActionEvent event) {
+        if (this.modelType == TrainingProcessor.Type.CLASS) {
+            // TODO show confusion matrix
+        } else {
+            // TODO show scatter graph
+        }
+    }
+
+    /**
+     * Button event to invoke cross-validation.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    private void runXValidate(ActionEvent event) {
+        // TODO runXValidate
     }
 
     /**
@@ -270,7 +374,8 @@ public class TrainingManager extends ResizableController  {
         Stage stage = new Stage();
         String[] headers = new String[availableHeaders.size()];
         headers = availableHeaders.toArray(headers);
-        MetaDialog dialog = (MetaDialog) PreferenceSet.loadFXML("MetaDialog", stage, headers);
+        MetaDialog dialog = (MetaDialog) PreferenceSet.loadFXML("MetaDialog", stage);
+        dialog.init(headers, this.modelType);
         stage.showAndWait();
         return dialog.getResult();
     }
@@ -280,6 +385,12 @@ public class TrainingManager extends ResizableController  {
      */
     private void configureType() {
         this.lblModelType.setText(this.modelType.getDescription());
+        String caption;
+        if (this.modelType == TrainingProcessor.Type.CLASS)
+            caption = "Confusion Matrix";
+        else
+            caption = "Scatter Graph";
+        this.btnViewResults.setText(caption);
     }
 
     /**
@@ -293,6 +404,140 @@ public class TrainingManager extends ResizableController  {
         this.btnViewLog.setDisable(! b);
         this.btnViewResults.setDisable(! b);
         this.btnCrossValidate.setDisable(! b);
+    }
+
+    /**
+     * Activate or deactivate the buttons depending on whether or not a background task is running.
+     *
+     * @param b		TRUE if there is a background task, else FALSE
+     */
+    private void disableButtons(boolean b) {
+        this.btnAbortCommand.setDisable(! b);
+        this.btnTrainingSearch.setDisable(b);
+        this.btnCrossValidate.setDisable(b);
+        this.btnGetDirectory.setDisable(b);
+        this.btnViewResults.setDisable(b);
+    }
+
+    /**
+     * Execute a command.
+     *
+     * @param processor		processor on which to execute command
+     * @param parms			parameters to pass
+     */
+    private void executeCommand(ICommand processor, String name, String[] parms) {
+        // Clear the throttling counts.
+        this.numSubmitted = 0;
+        this.numDisplayed = 0;
+        // Denote we have no score color.
+        this.barColor = Color.BLACK;
+        // Parse the parameters.
+        boolean ok = processor.parseCommand(parms);
+        if (! ok)
+            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Command Error", "Invalid parameter combination.");
+        else {
+            // Insure the user doesn't start anything else.
+            this.disableButtons(true);
+            // Tell the user what we're up to.
+            txtMessageBuffer.setText("Running " + name + " command.");
+            // Start the thread.
+            backgrounder = new BackgroundTask(this, processor);
+            new Thread(backgrounder).start();
+        }
+    }
+
+    /**
+     * This method is called when a background task has a message to display.  It operates on
+     * the background thread.
+     *
+     * @param message		message to display
+     */
+    @Override
+    public void showMessage(String message) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                txtMessageBuffer.setText(message);
+            }
+        });
+    }
+
+    /**
+     * This method is called when the background task has major text data to display.  It
+     * operates on the background thread.
+     *
+     * @param paragraph		text to display
+     */
+    @Override
+    public void showResults(String paragraph) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                String[] lines = LINE_END.split(paragraph);
+                txtResultsPane.setText(StringUtils.join(lines, LINE_SEP));
+            }
+        });
+    }
+
+    @Override
+    public void displayEpoch(int epoch, double score, boolean saved) {
+        // The throttle skips the score update unless the previous update has cleared.
+        if (this.numDisplayed >= this.numSubmitted) {
+            // Denote we have requested another update.
+            this.numSubmitted++;
+            // Submit the update.
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    // Update the epoch and the score.
+                    String epochText = Integer.toString(epoch);
+                    txtEpoch.setText(epochText);
+                    txtScore.setText(String.format("%14.8g", score));
+                    setProgress(score);
+                    // If this is the best epoch, remember it.
+                    if (saved)
+                        txtBestEpoch.setText(epochText);
+                    // Denote we have performed the update.
+                    numDisplayed++;
+                }
+            });
+        }
+    }
+
+    @Override
+    public void recordCompletion(boolean success) {
+        this.backgrounder = null;
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                disableButtons(false);
+                setProgress(0.0);
+            }
+        });
+    }
+
+    /**
+     * Display the specified score value on the progress bar.
+     *
+     * @param score		score to display
+     */
+    protected void setProgress(double score) {
+        double scaledScore = 0.0;
+        if (score >= TrainingManager.MIN_SCORE)
+            scaledScore = ((Math.log10(score) - LOG10_LOWER) * this.barContainer.getHeight() / (LOG10_UPPER - LOG10_LOWER));
+        // Compute the color.
+        Color color = NORMAL_COLOR;
+        if (score >= 1.0)
+            color = BAD_COLOR;
+        else if (score >= 0.01)
+            color = WARN_COLOR;
+        else if (score < 1e-5)
+            color = GOOD_COLOR;
+        if (! this.barColor.equals(color)) {
+            Background newBackground = new Background(new BackgroundFill(color, CornerRadii.EMPTY, Insets.EMPTY));
+            this.barProgress.setBackground(newBackground);
+        }
+        this.barProgress.setPrefHeight(scaledScore);
     }
 
 

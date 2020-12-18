@@ -97,21 +97,20 @@ public class PreferenceSet {
      *
      * @throws IOException
      */
-    public static IController loadFXML(String fxml, Stage stage, String... parms) throws IOException {
+    public static IController loadFXML(String fxml, Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
-        Parent retVal = fxmlLoader.load();
-        IController controller = (IController) fxmlLoader.getController();
-        stage.setTitle(controller.getWindowTitle());
-        String iconFile = controller.getIconName();
+        Parent parent = fxmlLoader.load();
+        IController retVal = (IController) fxmlLoader.getController();
+        stage.setTitle(retVal.getWindowTitle());
+        String iconFile = retVal.getIconName();
         if (iconFile != null) {
             Image icon = new Image(App.class.getResourceAsStream(iconFile));
             stage.getIcons().add(icon);
         }
-        Scene scene = new Scene(retVal);
+        Scene scene = new Scene(parent);
         stage.setScene(scene);
-        controller.setup(stage);
-        controller.init(parms);
-        return controller;
+        retVal.setup(stage);
+        return retVal;
     }
 
     /**

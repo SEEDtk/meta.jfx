@@ -40,12 +40,4 @@ public abstract class MovableController extends BaseController implements IContr
         { this.saveLocation(); });
     }
 
-    /**
-     * Perform any initialization required by the subclass.
-     *
-     * @param parms		array of parameters
-     */
-    public abstract void init(String[] parms);
-
-
 }

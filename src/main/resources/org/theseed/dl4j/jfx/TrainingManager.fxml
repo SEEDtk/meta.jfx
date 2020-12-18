@@ -23,7 +23,7 @@
             </Label>
          </children>
       </HBox>
-      <Button fx:id="btnTrainingSearch" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Training Search" textAlignment="CENTER" GridPane.columnIndex="5" />
+      <Button fx:id="btnTrainingSearch" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#runSearch" text="Training Search" textAlignment="CENTER" GridPane.columnIndex="5" />
       <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1">
          <GridPane.margin>
             <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
@@ -49,11 +49,11 @@
             </HBox>
          </children>
       </HBox>
-      <Button fx:id="btnCrossValidate" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Cross-Validate" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+      <Button fx:id="btnCrossValidate" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#runXValidate" text="Cross-Validate" GridPane.columnIndex="5" GridPane.rowIndex="1" />
       <TilePane alignment="CENTER" hgap="10.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2">
          <children>
-            <Button fx:id="btnViewLog" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="View Log" />
-            <Button fx:id="btnViewResults" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="View Results" />
+            <Button fx:id="btnViewLog" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewLog" prefWidth="125.0" text="View Log" />
+            <Button fx:id="btnViewResults" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showModelResults" prefWidth="125.0" text="View Results" />
          </children>
       </TilePane>
       <Button fx:id="btnAbortCommand" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Abort Command" textFill="RED" GridPane.columnIndex="3" GridPane.rowIndex="2" />

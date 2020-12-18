@@ -26,7 +26,7 @@
             <Button defaultButton="true" mnemonicParsing="false" onAction="#finish" text="Done" />
          </children>
       </HBox>
-      <Label maxWidth="1.7976931348623157E308" text="Select the headers of the metadata columns.  The first metadata column will be used as the row ID.  In a classification model, the last column will be used as the label (and is required)." wrapText="true" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" />
+      <Label fx:id="instructions" maxWidth="1.7976931348623157E308" text="Select the headers of the metadata columns.  The first metadata column will be used as the row ID.  In a classification model, the last column will be used as the label (and is required)." wrapText="true" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" />
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

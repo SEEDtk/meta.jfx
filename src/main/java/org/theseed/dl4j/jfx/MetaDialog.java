@@ -6,11 +6,13 @@ package org.theseed.dl4j.jfx;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.jfx.MovableController;
 
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.StageStyle;
@@ -25,6 +27,10 @@ import javafx.stage.StageStyle;
  */
 public class MetaDialog extends MovableController {
 
+    // FIELDS
+    /** basic instructions */
+    private static String INSTRUCTIONS = "Click on a column name to move it between list boxes.  The metadata columns should be listed on the right "
+            + "when you are done.  The first column selected will be used as the row ID.";
     // CONTROLS
 
     /** list of unselected columns */
@@ -34,6 +40,10 @@ public class MetaDialog extends MovableController {
     /** list of selected columns */
     @FXML
     private ListView<String> rightList;
+
+    /** instructional text label */
+    @FXML
+    private Label instructions;
 
     public MetaDialog() {
         super(200, 200);
@@ -49,13 +59,23 @@ public class MetaDialog extends MovableController {
         return "Metadata Column Selection";
     }
 
-    @Override
-    public void init(String[] parms) {
+    /**
+     * Initialize this dialog.
+     *
+     * @param headers		column header names
+     * @param modelType		relevant model type (CLASS or REGRESSION)
+     */
+    public void init(String[] headers, TrainingProcessor.Type modelType) {
         // Start out with everything unselected.
-        leftList.getItems().addAll(parms);
+        leftList.getItems().addAll(headers);
         // Make this window fixed-size and modal.
         this.getStage().initStyle(StageStyle.UTILITY);
         this.getStage().setResizable(false);
+        if (modelType == TrainingProcessor.Type.CLASS) {
+            instructions.setText(INSTRUCTIONS + " The last column selected will be the label (this is required).");
+        } else {
+            instructions.setText(INSTRUCTIONS);
+        }
     }
 
     /**

@@ -8,6 +8,9 @@ import javafx.stage.Stage;
 /**
  * This interface is used by controller classes to specify the icon and window title.
  *
+ * Note that by convention, dialogs use init() to take in parameters and getResult()
+ * to return results.
+ *
  * @author Bruce Parrello
  *
  */
@@ -29,12 +32,5 @@ public interface IController {
      * @param stage		parent stage object
      */
     public void setup(Stage stage);
-
-    /**
-     * Perform any initialization required by the subclass.
-     *
-     * @param parms		array of parameters
-     */
-    public abstract void init(String[] parms);
 
 }

@@ -47,11 +47,4 @@ public abstract class ResizableController extends BaseController {
         { this.saveLocationAndSize(); });
     }
 
-    /**
-     * Perform any initialization required by the subclass.
-     *
-     * @param parms		array of parameters
-     */
-    public abstract void init(String[] parms);
-
 }
