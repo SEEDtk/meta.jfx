@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane hgap="5.0" prefHeight="450.0" prefWidth="450.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.theseed.dl4j.jfx.ScatterGraph">
+   <columnConstraints>
+      <ColumnConstraints />
+      <ColumnConstraints hgrow="ALWAYS" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+   </rowConstraints>
+   <children>
+      <Label text="Label to Display" />
+      <ComboBox fx:id="cmbLabel" prefWidth="150.0" GridPane.columnIndex="1" />
+      <ScatterChart fx:id="scatterGraph" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="417.0" prefWidth="448.0" stylesheets="@mods.css" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" GridPane.vgrow="ALWAYS">
+        <xAxis>
+          <NumberAxis label="expected" side="BOTTOM" />
+        </xAxis>
+        <yAxis>
+          <NumberAxis label="predicted" side="LEFT" />
+        </yAxis>
+      </ScatterChart>
+   </children>
+</GridPane>

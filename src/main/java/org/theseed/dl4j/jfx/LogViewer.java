@@ -17,7 +17,6 @@ import org.theseed.jfx.ResizableController;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -37,13 +36,15 @@ public class LogViewer extends ResizableController {
     /** last summary node loaded into the tree */
     private TreeItem<LogSection> lastSummary;
     /** root icon */
-    private static final Node ROOT_ICON = new ImageView(new Image(App.class.getResourceAsStream("model-16.png")));
+    private static final Image ROOT_ICON = new Image(App.class.getResourceAsStream("model-16.png"));
     /** job icon */
-    private static final Node JOB_ICON = new ImageView(new Image(App.class.getResourceAsStream("job-16.png")));
+    private static final Image JOB_ICON = new Image(App.class.getResourceAsStream("job-16.png"));
     /** session icon */
-    private static final Node SESSION_ICON = new ImageView(new Image(App.class.getResourceAsStream("session-16.png")));
+    private static final Image SESSION_ICON = new Image(App.class.getResourceAsStream("session-16.png"));
     /** summary icon */
-    private static final Node SUMMARY_ICON = new ImageView(new Image(App.class.getResourceAsStream("summary-16.png")));
+    private static final Image SUMMARY_ICON = new Image(App.class.getResourceAsStream("summary-16.png"));
+    /** cross-validate icon */
+    private static final Image CROSS_ICON = new Image(App.class.getResourceAsStream("validate-16.png"));
     /** line separator for creating section text */
     private static final String LINE_SEP = System.getProperty("line.separator");
     /** default number of lines to allocate for each section */
@@ -138,7 +139,8 @@ public class LogViewer extends ResizableController {
         boolean found = false;
         this.lastSummary = null;
         // Create the root node.
-        TreeItem<LogSection> rootNode = new TreeItem<LogSection>(new LogSection(modelName), ROOT_ICON);
+        TreeItem<LogSection> rootNode = new TreeItem<LogSection>(new LogSection(modelName), new ImageView(ROOT_ICON));
+        this.treeDirectory.setRoot(rootNode);
         // Everything else comes from the file.
         try (LineReader reader = new LineReader(logFile)) {
             Iterator<String> lineIter = reader.iterator();
@@ -195,7 +197,9 @@ public class LogViewer extends ResizableController {
         boolean retVal = false;
         String line = lineIter.next();
         LogSection jobSection = new LogSection(line);
-        TreeItem<LogSection> jobItem = new TreeItem<LogSection>(jobSection, JOB_ICON);
+        Image icon = (line.startsWith("Cross-Validate") ? CROSS_ICON : JOB_ICON);
+        TreeItem<LogSection> jobItem = new TreeItem<LogSection>(jobSection, new ImageView(icon));
+        rootNode.getChildren().add(jobItem);
         // This will be the current section.
         LogSection section = null;
         // Loop until we find the end of the file or an end-of-job marker.
@@ -226,8 +230,9 @@ public class LogViewer extends ResizableController {
                 }
                 break;
             default :
-                // Here we have a data line.
-                section.add(line);
+                // If we are in a section, this is a data line.  Otherwise, it is a spacer and we ignore it.
+                if (section != null)
+                    section.add(line);
             }
         }
         // Save the residual.
@@ -245,8 +250,8 @@ public class LogViewer extends ResizableController {
      * @param section	section to store
      */
     private void storeSection(TreeItem<LogSection> jobItem, LogSection section) {
-        Node icon = (section.toString().startsWith("Summary") ? SUMMARY_ICON : SESSION_ICON);
-        TreeItem<LogSection> sectionItem = new TreeItem<LogSection>(section, icon);
+        Image icon = (section.toString().startsWith("Summary") ? SUMMARY_ICON : SESSION_ICON);
+        TreeItem<LogSection> sectionItem = new TreeItem<LogSection>(section, new ImageView(icon));
         jobItem.getChildren().add(sectionItem);
         // If this was a summary section, remember it.
         if (icon == SUMMARY_ICON)

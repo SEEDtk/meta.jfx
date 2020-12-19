@@ -5,6 +5,7 @@ package org.theseed.dl4j.jfx;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -12,15 +13,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.theseed.dl4j.train.CrossValidateProcessor;
 import org.theseed.dl4j.train.ITrainReporter;
 import org.theseed.dl4j.train.SearchProcessor;
 import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.io.LineReader;
 import org.theseed.jfx.BackgroundTask;
+import org.theseed.jfx.BaseController;
 import org.theseed.jfx.IBackgroundController;
-import org.theseed.jfx.PreferenceSet;
 import org.theseed.jfx.ResizableController;
 import org.theseed.utils.ICommand;
+import org.theseed.utils.Parms;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -177,7 +180,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 this.modelDirectory = null;
         } catch (IOException e) {
             this.setState(false);
-            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.getMessage());
         }
     }
 
@@ -210,11 +213,11 @@ public class TrainingManager extends ResizableController implements ITrainReport
                     found = this.analyzeModelDirectory(curDir);
                     if (! found) {
                         // Directory was invalid.  Try again.
-                        PreferenceSet.messageBox(Alert.AlertType.WARNING, "Error Changing Model Directory",
+                        BaseController.messageBox(Alert.AlertType.WARNING, "Error Changing Model Directory",
                                 curDir + " does not have a training.tbl and a labels.txt.");
                     }
                 } catch (IOException e) {
-                    PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Changing Model Directory", e.getMessage());
+                    BaseController.messageBox(Alert.AlertType.ERROR, "Error Changing Model Directory", e.getMessage());
                 }
             }
         }
@@ -229,7 +232,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
     private void runSearch(ActionEvent event) {
         try {
             Stage dialogStage = new Stage();
-            ParmDialog dialog = (ParmDialog) PreferenceSet.loadFXML("ParmDialog", dialogStage);
+            ParmDialog dialog = (ParmDialog) BaseController.loadFXML("ParmDialog", dialogStage);
             dialog.init(this.parmFile, this.modelType);
             dialogStage.showAndWait();
             if (dialog.getResult()) {
@@ -238,7 +241,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 executeCommand(processor, "SEARCH", parms);
             }
         } catch (IOException e) {
-            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Loading Parameter Dialog", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Parameter Dialog", e.getMessage());
         }
     }
 
@@ -251,12 +254,12 @@ public class TrainingManager extends ResizableController implements ITrainReport
     private void viewLog(ActionEvent event) {
         try {
             Stage logStage = new Stage();
-            LogViewer logViewer = (LogViewer) PreferenceSet.loadFXML("LogViewer", logStage);
+            LogViewer logViewer = (LogViewer) BaseController.loadFXML("LogViewer", logStage);
             File logFile = new File(this.modelDirectory, "trials.log");
             logViewer.init(logFile, this.txtModelDirectory.getText());
             logStage.show();
         } catch (IOException e) {
-            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Loading Log Viewer", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Log Viewer", e.getMessage());
         }
     }
 
@@ -267,10 +270,24 @@ public class TrainingManager extends ResizableController implements ITrainReport
      */
     @FXML
     private void showModelResults(ActionEvent event) {
-        if (this.modelType == TrainingProcessor.Type.CLASS) {
-            // TODO show confusion matrix
-        } else {
-            // TODO show scatter graph
+        try {
+            Stage resultStage = new Stage();
+            // Get the training processor and set it up for predictions.
+            TrainingProcessor processor = TrainingProcessor.create(this.modelType);
+            processor.setProgressMonitor(this);
+            boolean ok = processor.initializeForPredictions(this.modelDirectory);
+            if (ok) {
+                // Compute the type of result display.
+                String displayType = (this.modelType == TrainingProcessor.Type.CLASS ? "ConfusionMatrix" : "ScatterGraph");
+                // Create and display the result dialog.
+                ResultDisplay resultDialog = (ResultDisplay) BaseController.loadFXML("ResultDisplay", resultStage);
+                resultDialog.init(processor, displayType);
+                resultStage.showAndWait();
+            } else {
+                BaseController.messageBox(Alert.AlertType.ERROR, "Invalid Parameter File", "Parameter file not set up for evaluation.");
+            }
+        } catch (IOException e) {
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Result Display", e.getMessage());
         }
     }
 
@@ -281,7 +298,37 @@ public class TrainingManager extends ResizableController implements ITrainReport
      */
     @FXML
     private void runXValidate(ActionEvent event) {
-        // TODO runXValidate
+        ICommand processor = new CrossValidateProcessor(this);
+        try {
+            String idCol = this.getIdCol();
+            List<String> parmList = new ArrayList<String>(10);
+            parmList.add("-t");
+            parmList.add(modelType.toString());
+            if (idCol != null) {
+                parmList.add("--id");
+                parmList.add(idCol);
+            }
+            parmList.add(this.modelDirectory.toString());
+            String[] parms = new String[parmList.size()];
+            parms = parmList.toArray(parms);
+            this.executeCommand(processor, "Cross-Validate", parms);
+        } catch (IOException e) {
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Parm File", e.getMessage());
+        }
+    }
+
+    /**
+     * @return the ID column for the current model, or NULL if there is none
+     *
+     * @throws IOException
+     */
+    private String getIdCol() throws IOException {
+        String retVal = null;
+        Parms parms = new Parms(parmFile);
+        String[] cols = StringUtils.split(parms.getValue("--metaCols"), ',');
+        if (cols.length >= 1)
+            retVal = cols[0];
+        return retVal;
     }
 
     /**
@@ -374,7 +421,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         Stage stage = new Stage();
         String[] headers = new String[availableHeaders.size()];
         headers = availableHeaders.toArray(headers);
-        MetaDialog dialog = (MetaDialog) PreferenceSet.loadFXML("MetaDialog", stage);
+        MetaDialog dialog = (MetaDialog) BaseController.loadFXML("MetaDialog", stage);
         dialog.init(headers, this.modelType);
         stage.showAndWait();
         return dialog.getResult();
@@ -434,7 +481,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         // Parse the parameters.
         boolean ok = processor.parseCommand(parms);
         if (! ok)
-            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Command Error", "Invalid parameter combination.");
+            BaseController.messageBox(Alert.AlertType.ERROR, "Command Error", "Invalid parameter combination.");
         else {
             // Insure the user doesn't start anything else.
             this.disableButtons(true);

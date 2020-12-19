@@ -18,8 +18,8 @@ import org.theseed.dl4j.train.RunStats;
 import org.theseed.dl4j.train.Trainer;
 import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.io.ParmFile;
+import org.theseed.jfx.BaseController;
 import org.theseed.jfx.MovableController;
-import org.theseed.jfx.PreferenceSet;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -88,7 +88,7 @@ public class ParmDialog extends MovableController {
         try {
             this.parms = new ParmFile(parmFile);
         } catch (IOException e) {
-            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Reading Parm File", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Parm File", e.getMessage());
         }
         // Now we need to build the parameter dialog groups.  First the model structure parameters.
         ParmPaneBuilder builder = new ParmPaneBuilder(this.structurePane, this.parms);
@@ -152,7 +152,7 @@ public class ParmDialog extends MovableController {
     @FXML
     private void saveAndStay(ActionEvent event) {
         if (this.save())
-            PreferenceSet.messageBox(Alert.AlertType.INFORMATION, "Parm File Status", "Parameters saved to " + this.parmFile.getAbsolutePath() + ".");
+            BaseController.messageBox(Alert.AlertType.INFORMATION, "Parm File Status", "Parameters saved to " + this.parmFile.getAbsolutePath() + ".");
     }
 
     /**
@@ -190,7 +190,7 @@ public class ParmDialog extends MovableController {
             this.parms.save(this.parmFile);
             retVal = true;
         } catch (IOException e) {
-            PreferenceSet.messageBox(Alert.AlertType.ERROR, "Error Saving Parm File", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Saving Parm File", e.getMessage());
         }
         return retVal;
     }
