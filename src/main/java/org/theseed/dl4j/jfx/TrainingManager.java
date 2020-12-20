@@ -64,6 +64,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
     private BackgroundTask backgrounder;
     /** current progress bar background color */
     private Color barColor;
+    /** stop flag:  set to TRUE to abort the background task */
+    private boolean stopFlag;
     /** pattern for finding line terminators in log messages */
     public static final Pattern LINE_END = Pattern.compile("\\r?\\n");
     /** system line separator */
@@ -167,6 +169,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
     public void init() {
         // Denote there is no background task running.
         this.backgrounder = null;
+        this.stopFlag = false;
         // Get the last-saved model directory.
         String dirName = this.getPref("modelDirectory", "");
         File newDir = null;
@@ -219,6 +222,19 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 }
             }
         }
+    }
+
+    /**
+     * Stop the current background task.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    private void abortCommand(ActionEvent event) {
+        if (this.backgrounder != null) {
+            this.stopFlag = true;
+        }
+
     }
 
     /**
@@ -475,6 +491,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
         else {
             // Insure the user doesn't start anything else.
             this.disableButtons(true);
+            // Clear the stop flag.
+            this.stopFlag = false;
             // Tell the user what we're up to.
             txtMessageBuffer.setText("Running " + name + " command.");
             // Start the thread.
@@ -517,7 +535,11 @@ public class TrainingManager extends ResizableController implements ITrainReport
     }
 
     @Override
-    public void displayEpoch(int epoch, double score, boolean saved) {
+    public void displayEpoch(int epoch, double score, boolean saved) throws InterruptedException {
+        // Check for an abort.
+        if (this.stopFlag) {
+            throw new InterruptedException("Stop requested by user.");
+        }
         // The throttle skips the score update unless the previous update has cleared.
         if (this.numDisplayed >= this.numSubmitted) {
             // Denote we have requested another update.
