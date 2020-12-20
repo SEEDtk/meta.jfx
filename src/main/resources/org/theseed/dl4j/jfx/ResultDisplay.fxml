@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.GridPane?>
 
-<GridPane hgap="5.0" prefHeight="500.0" prefWidth="500.0" stylesheets="@mods.css" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.theseed.dl4j.jfx.ResultDisplay">
+<GridPane hgap="5.0" prefHeight="500.0" prefWidth="700.0" stylesheets="@mods.css" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.theseed.dl4j.jfx.ResultDisplay">
    <columnConstraints>
       <ColumnConstraints />
       <ColumnConstraints />
@@ -20,9 +20,14 @@
    </rowConstraints>
    <children>
       <Label text="Training File" />
-      <TextField fx:id="txtTrainingFileName" editable="false" styleClass="readOnly" GridPane.columnIndex="1" />
+      <TextField fx:id="txtTrainingFileName" alignment="CENTER_RIGHT" editable="false" prefWidth="250.0" styleClass="readOnly" GridPane.columnIndex="1" />
       <Button mnemonicParsing="false" onAction="#selectTrainingFile" text="..." GridPane.columnIndex="2" />
-      <Button mnemonicParsing="false" onAction="#displayResults" text="Replot Predictions" GridPane.columnIndex="3" />
+      <TilePane alignment="CENTER_RIGHT" hgap="10.0" prefWidth="300.0" GridPane.columnIndex="3">
+         <children>
+            <Button contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Save to File" />
+            <Button contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#displayResults" text="Replot Predictions" GridPane.columnIndex="3" />
+         </children>
+      </TilePane>
       <AnchorPane fx:id="clientPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="4" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" />
    </children>
    <padding>

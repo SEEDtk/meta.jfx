@@ -4,12 +4,15 @@
 package org.theseed.dl4j.jfx;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
 import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.ResizableController;
+import org.theseed.reports.IValidationReport;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -53,7 +56,7 @@ public class ResultDisplay extends ResizableController {
      * The constructor positions the window.
      */
     public ResultDisplay() {
-        super(200, 200, 500, 500);
+        super(200, 200, 700, 500);
     }
 
     @Override
@@ -110,7 +113,7 @@ public class ResultDisplay extends ResizableController {
      */
     private void storeTrainingFile(File trainFile) {
         this.trainingFile = trainFile;
-        this.txtTrainingFileName.setText(this.trainingFile.getName());
+        this.txtTrainingFileName.setText(this.trainingFile.getAbsolutePath());
     }
 
     /**
@@ -120,12 +123,7 @@ public class ResultDisplay extends ResizableController {
      */
     @FXML
     private void selectTrainingFile(ActionEvent event) {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Select Training File");
-        chooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt", "*.tbl", "*.tsv"),
-                new FileChooser.ExtensionFilter("All Files", "*.*"));
-        chooser.setInitialDirectory(this.trainingFile.getParentFile());
+        FileChooser chooser = createFileChooser("Select Training File");
         File newFile = chooser.showOpenDialog(this.getStage());
         if (newFile != null) {
             if (! newFile.canRead())
@@ -133,6 +131,21 @@ public class ResultDisplay extends ResizableController {
             else
                 this.storeTrainingFile(newFile);
         }
+    }
+
+    /**
+     * @return a file chooser for training files with the specified title
+     *
+     * @param title		title to use
+     */
+    public FileChooser createFileChooser(String title) {
+        FileChooser retVal = new FileChooser();
+        retVal.setTitle(title);
+        retVal.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Text Files", "*.txt", "*.tbl", "*.tsv"),
+                new FileChooser.ExtensionFilter("All Files", "*.*"));
+        retVal.setInitialDirectory(this.trainingFile.getParentFile());
+        return retVal;
     }
 
     /**
@@ -153,6 +166,23 @@ public class ResultDisplay extends ResizableController {
             processor.runPredictions(this.displayController, this.trainingFile);
         } catch (IOException e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "PredictionError", e.getMessage());
+        }
+    }
+
+    /**
+     * Run the predictions and save the results to a file.
+     */
+    @FXML
+    private void saveResults(ActionEvent event) {
+        FileChooser chooser = this.createFileChooser("Select Output File");
+        File outFile = chooser.showSaveDialog(this.getStage());
+        if (outFile != null) {
+            try (FileOutputStream outStream = new FileOutputStream(outFile)) {
+                IValidationReport output = processor.getValidationReporter(outStream);
+                processor.runPredictions(output, this.trainingFile);
+            } catch (IOException e) {
+                BaseController.messageBox(Alert.AlertType.ERROR, "PredictionError", e.getMessage());
+            }
         }
     }
 

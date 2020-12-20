@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.theseed.dl4j.train.ClassPredictError;
 import org.theseed.dl4j.train.IPredictError;
+import org.theseed.jfx.DragResizer;
 
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -25,13 +26,22 @@ import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.layout.Region;
 import javafx.util.Callback;
 
 /**
+ * This displays the results for a classification model.  For each set
+ * (testing, training, all), there is a table and a bar chart.  In the
+ * bar chart, each data series represents a predicted value, and each
+ * position in the series an expected value.  (Each series thus has
+ * one value per bar.)  Conversely, in the table, each column is a
+ * predicted value and each row an expected value.  The net effect is
+ * predictions are horizontal and actual values are on the X-axis.
+ *
  * @author Bruce Parrello
  *
  */
-public class ConfusionMatrix extends ValidationDisplayReport {
+public class ConfusionMatrix extends ValidationDisplayReport implements DragResizer.CallBack {
 
     /** confusion matrix for the training set [o][e] */
     private int[][] trainMatrix;
@@ -47,6 +57,8 @@ public class ConfusionMatrix extends ValidationDisplayReport {
     private List<XYChart.Series<String, Integer>> trainData;
     /** full data series for each label */
     private List<XYChart.Series<String, Integer>> fullData;
+    /** array of table regions */
+    private Region[] tables;
 
     // CONTROLS
 
@@ -159,6 +171,8 @@ public class ConfusionMatrix extends ValidationDisplayReport {
         this.setupTable(this.trainTable, this.trainLabels, this.trainMatrix);
         this.setupTable(this.testTable, this.testLabels, this.testMatrix);
         this.setupTable(this.fullTable, this.fullLabels, this.fullMatrix);
+        // Put all the tables into an array.
+        this.tables = new TableView[] { this.trainTable, this.testTable, this.fullTable };
     }
 
     /**
@@ -193,6 +207,8 @@ public class ConfusionMatrix extends ValidationDisplayReport {
         }
         table.setItems(rows);
         table.setPrefSize(80.0 + 40.0 * this.labels.size(), (this.labels.size() + 1) * 25.0);
+        // Make the table resizable.
+        DragResizer.makeResizable(table, this);
     }
 
     /**
@@ -213,7 +229,7 @@ public class ConfusionMatrix extends ValidationDisplayReport {
         // The strange part is the series labels are the same as the category labels.
         for (String label : this.labels) {
             ObservableList<XYChart.Data<String, Integer>> data = FXCollections.observableArrayList(
-                    this.labels.stream().map(x -> new XYChart.Data<String, Integer>(label, 1)).collect(Collectors.toList()));
+                    this.labels.stream().map(x -> new XYChart.Data<String, Integer>(x, 1)).collect(Collectors.toList()));
             XYChart.Series<String, Integer> series = new XYChart.Series<String, Integer>(label, data);
             // Add the series to the chart.
             chart.getData().add(series);
@@ -281,15 +297,29 @@ public class ConfusionMatrix extends ValidationDisplayReport {
      * @param seriesList	list of data series connected to the relevant graph, one per category
      */
     private void updateSeries(int[][] matrix, List<Series<String, Integer>> seriesList) {
-        // Loop through the expected values.  Each corresponds to a series.
-        for (int e = 0; e < this.labels.size(); e++) {
-            ObservableList<XYChart.Data<String, Integer>> data = seriesList.get(e).getData();
+        // Loop through the predicted values.  Each corresponds to a series.
+        for (int o = 0; o < this.labels.size(); o++) {
+            ObservableList<XYChart.Data<String, Integer>> data = seriesList.get(o).getData();
             // Loop through the predicted values.  Each corresponds to a data point in the series.
-            for (int o = 0; o < this.labels.size(); o++) {
+            for (int e = 0; e < this.labels.size(); e++) {
                 int count = matrix[o][e];
-                data.get(o).setYValue(count);
+                data.get(e).setYValue(count);
             }
         }
+    }
+
+    @Override
+    public void handleResize(Region target) {
+        // One of the tables was resized.  Resize the others to match.
+        double newWidth = target.getPrefWidth();
+        double newHeight = target.getPrefHeight();
+        for (Region other : this.tables) {
+            if (other != target) {
+                other.setPrefWidth(newWidth);
+                other.setPrefHeight(newHeight);
+            }
+        }
+
     }
 
 }

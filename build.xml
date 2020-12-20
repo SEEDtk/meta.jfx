@@ -127,16 +127,13 @@
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/ch/qos/logback/logback-core/1.2.3/logback-core-1.2.3.jar"/>
             <fileset dir="${dir.workspace}/git/shared/target/classes"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-controls/11/javafx-controls-11.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-controls/11/javafx-controls-11-win.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-graphics/11/javafx-graphics-11.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-fxml/15.0.1/javafx-fxml-15.0.1.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-fxml/15.0.1/javafx-fxml-15.0.1-win.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/com/github/eprst/murmur3/0.3/murmur3-0.3.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/com/github/cliftonlabs/json-simple/3.1.0/json-simple-3.1.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/com/j2html/j2html/1.4.0/j2html-1.4.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-graphics/11/javafx-graphics-11-win.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-base/11/javafx-base-11.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-base/11/javafx-base-11-win.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-graphics/11/javafx-graphics-11-linux.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/openjfx/javafx-graphics/11/javafx-graphics-11-mac.jar"/>
         </jar>

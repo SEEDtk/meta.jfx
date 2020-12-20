@@ -3,6 +3,7 @@
  */
 package org.theseed.dl4j.jfx;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.theseed.dl4j.train.IPredictError;
@@ -83,16 +84,23 @@ public class ScatterGraph extends ValidationDisplayReport {
 
     @Override
     public void reportOutput(List<String> metaData, INDArray expected, INDArray output) {
+        // Save the testing data points in here.  We want them on top.
+        List<XYChart.Data<Double, Double>> testingData = new ArrayList<>(1000);
         // Loop through the metadata, peeling off predictions.
         for (int r = 0; r < metaData.size(); r++) {
             String id = this.getId(metaData.get(r));
-            // Determine which series should contain the data.
-            XYChart.Series<Double, Double> target = (this.isTrained(id) ? this.trainingPoints : this.testingPoints);
-            // Get the expected value.
+            // Create the data point.
             double expect = expected.getDouble(r, this.labelIdx);
             double predict = output.getDouble(r, this.labelIdx);
-            target.getData().add(new XYChart.Data<Double, Double>(expect, predict));
+            XYChart.Data<Double, Double> dataPoint = new XYChart.Data<Double, Double>(expect, predict);
+            // Determine which series should contain the data.
+            if (this.isTrained(id))
+                this.trainingPoints.getData().add(dataPoint);
+            else
+                testingData.add(dataPoint);
         }
+        // Unspool the testing points.
+        this.testingPoints.getData().addAll(testingData);
     }
 
     @Override

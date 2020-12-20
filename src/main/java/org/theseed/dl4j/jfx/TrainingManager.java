@@ -10,8 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.dl4j.train.CrossValidateProcessor;
 import org.theseed.dl4j.train.ITrainReporter;
@@ -278,7 +276,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
             boolean ok = processor.initializeForPredictions(this.modelDirectory);
             if (ok) {
                 // Compute the type of result display.
-                String displayType = (this.modelType == TrainingProcessor.Type.CLASS ? "ConfusionMatrix" : "ScatterGraph");
+                String displayType = this.modelType.getDisplayType();
                 // Create and display the result dialog.
                 ResultDisplay resultDialog = (ResultDisplay) BaseController.loadFXML("ResultDisplay", resultStage);
                 resultDialog.init(processor, displayType);
@@ -389,12 +387,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
                         int testSize = size / 10;
                         if (testSize < 1) testSize = 1;
                         processor.setTestSize(testSize);
-                        // Pull up the meta-column dialog.  We need to delete the label columns from the header list first.
-                        List<String> availableHeaders;
-                        if (modelType != TrainingProcessor.Type.REGRESSION)
-                            availableHeaders = headers;
-                        else
-                            availableHeaders = headers.stream().filter(x -> ! labels.contains(x)).collect(Collectors.toList());
+                        // Pull up the meta-column dialog.
+                        List<String> availableHeaders = processor.computeAvailableHeaders(headers, labels);
                         String[] metaCols = this.findMetaColumns(availableHeaders);
                         processor.setMetaCols(metaCols);
                         if (metaCols.length > 0)
@@ -432,11 +426,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
      */
     private void configureType() {
         this.lblModelType.setText(this.modelType.getDescription());
-        String caption;
-        if (this.modelType == TrainingProcessor.Type.CLASS)
-            caption = "Confusion Matrix";
-        else
-            caption = "Scatter Graph";
+        String caption = this.modelType.resultDescription();
         this.btnViewResults.setText(caption);
     }
 

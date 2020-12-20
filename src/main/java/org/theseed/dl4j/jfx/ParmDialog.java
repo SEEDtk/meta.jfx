@@ -14,7 +14,6 @@ import org.theseed.dl4j.Regularization;
 import org.theseed.dl4j.jfx.parms.ParmDialogGroup;
 import org.theseed.dl4j.jfx.parms.ParmPaneBuilder;
 import org.theseed.dl4j.train.GradientUpdater;
-import org.theseed.dl4j.train.RunStats;
 import org.theseed.dl4j.train.Trainer;
 import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.io.ParmFile;
@@ -114,8 +113,7 @@ public class ParmDialog extends MovableController {
         }
         // Next, the search tuning parameters.
         builder = new ParmPaneBuilder(this.tuningPane, this.parms);
-        Enum<?>[] preferTypes = (this.modelType == TrainingProcessor.Type.CLASS ? RunStats.OptimizationType.values()
-                : RunStats.RegressionType.values());
+        Enum<?>[] preferTypes = this.modelType.getPreferTypes();
         builder.addChoices("prefer", preferTypes);
         builder.addChoices("method", Trainer.Type.values());
         builder.addText("bound");
