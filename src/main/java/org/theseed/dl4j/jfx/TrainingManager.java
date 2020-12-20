@@ -175,13 +175,18 @@ public class TrainingManager extends ResizableController implements ITrainReport
         File newDir = null;
         if (! dirName.isEmpty())
             newDir = new File(dirName);
-        try {
-            boolean ok = this.analyzeModelDirectory(newDir);
-            if (! ok)
-                this.modelDirectory = null;
-        } catch (IOException e) {
-            this.setState(false);
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.getMessage());
+        // Only proceed if the directory has a parms.prm file.  We don't want to pop up the meta-dialog
+        // here.  If there is no parms.prm, we assume the directory has been erased.
+        File parmsFile = new File(newDir, "parms.prm");
+        if (parmsFile.exists()) {
+            try {
+                boolean ok = this.analyzeModelDirectory(newDir);
+                if (! ok)
+                    this.modelDirectory = null;
+            } catch (IOException e) {
+                this.setState(false);
+                BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.getMessage());
+            }
         }
     }
 
