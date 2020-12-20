@@ -12,7 +12,12 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.theseed.dl4j.train.IPredictError;
 import org.theseed.io.LineReader;
+import org.theseed.reports.IValidationReport;
+
+import javafx.collections.ObservableList;
+import javafx.scene.control.TableView;
 
 /**
  * This is the base class for the two validation reports.  It mostly handles the testing/training divide.
@@ -20,7 +25,7 @@ import org.theseed.io.LineReader;
  * @author Bruce Parrello
  *
  */
-public abstract class ValidationDisplayReport implements IDisplayController {
+public abstract class ValidationDisplayReport implements IValidationReport {
 
     /** IDs of records that were used in training */
     private Set<String> trained;
@@ -28,13 +33,31 @@ public abstract class ValidationDisplayReport implements IDisplayController {
     private int idColIdx;
     /** next available ID number */
     private int idNum;
+    /** table for statistical output */
+    private ObservableList<ResultDisplay.Stat> statsList;
 
     /**
-     * Construct a blank scatter object.
+     * Construct a blank result report object.
      */
     public ValidationDisplayReport() {
         this.trained = Collections.emptySet();
         this.idNum = 1;
+    }
+
+    /**
+     * Initialize for display.
+     *
+     * @param labels	list of labels for the governing model
+     */
+    public abstract void init(List<String> labels);
+
+    /**
+     * Save the table used to display statistics.
+     *
+     * @param statsTable	table for displaying prediction statistics
+     */
+    public void register(TableView<ResultDisplay.Stat> statsTable) {
+        this.statsList = statsTable.getItems();
     }
 
     /**
@@ -70,6 +93,24 @@ public abstract class ValidationDisplayReport implements IDisplayController {
             File trainedFile = new File(modelDir, "trained.tbl");
             this.trained = LineReader.readSet(trainedFile);
         }
+    }
+
+    @Override
+    public void finishReport(IPredictError errors) {
+        // Let the subclass finish its report.
+        this.finishReport();
+        // Now fill in the stats table.
+        this.statsList.clear();
+        String[] names = errors.getTitles();
+        double[] values = errors.getStats();
+        for (int i = 0; i < names.length; i++)
+            this.statsList.add(new ResultDisplay.Stat(names[i], values[i]));
+    }
+
+    /**
+     * This method allows the subclass to do its own special processing at the end of the report.
+     */
+    public void finishReport() {
     }
 
     @Override

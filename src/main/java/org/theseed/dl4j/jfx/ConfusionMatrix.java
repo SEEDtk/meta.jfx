@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.theseed.dl4j.train.ClassPredictError;
-import org.theseed.dl4j.train.IPredictError;
 import org.theseed.jfx.DragResizer;
 
 import javafx.beans.property.SimpleIntegerProperty;
@@ -278,7 +277,7 @@ public class ConfusionMatrix extends ValidationDisplayReport implements DragResi
     }
 
     @Override
-    public void finishReport(IPredictError errors) {
+    public void finishReport() {
         // Now we add the data points to the series.
         this.updateSeries(this.trainMatrix, this.trainData);
         this.updateSeries(this.testMatrix, this.testData);

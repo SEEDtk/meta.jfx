@@ -20,15 +20,40 @@
    </rowConstraints>
    <children>
       <Label text="Training File" />
-      <TextField fx:id="txtTrainingFileName" alignment="CENTER_RIGHT" editable="false" prefWidth="250.0" styleClass="readOnly" GridPane.columnIndex="1" />
+      <TextField fx:id="txtTrainingFileName" editable="false" prefWidth="250.0" styleClass="readOnly" GridPane.columnIndex="1" />
       <Button mnemonicParsing="false" onAction="#selectTrainingFile" text="..." GridPane.columnIndex="2" />
       <TilePane alignment="CENTER_RIGHT" hgap="10.0" prefWidth="300.0" GridPane.columnIndex="3">
          <children>
-            <Button contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Save to File" />
-            <Button contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#displayResults" text="Replot Predictions" GridPane.columnIndex="3" />
+            <Button contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#saveResults" text="Save to File" />
+            <Button contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#displayResults" text="Replot Predictions" />
          </children>
       </TilePane>
-      <AnchorPane fx:id="clientPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="4" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" />
+      <TabPane tabClosingPolicy="UNAVAILABLE" GridPane.columnSpan="4" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+         <tabs>
+            <Tab text="Visual">
+               <content>
+                  <AnchorPane fx:id="clientPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="4" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" />
+               </content>
+            </Tab>
+            <Tab text="Statistics">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <TableView fx:id="statsTable" layoutX="14.0" layoutY="14.0" prefHeight="200.0" prefWidth="300.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">
+                          <columns>
+                            <TableColumn fx:id="nameColumn" prefWidth="250.0" text="Statistic" />
+                            <TableColumn fx:id="valueColumn" prefWidth="100.0" style="-fx-alignment: CENTER-RIGHT;" text="Value" />
+                          </columns>
+                           <columnResizePolicy>
+                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                           </columnResizePolicy>
+                        </TableView>
+                     </children>
+                  </AnchorPane>
+              </content>
+            </Tab>
+         </tabs>
+      </TabPane>
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

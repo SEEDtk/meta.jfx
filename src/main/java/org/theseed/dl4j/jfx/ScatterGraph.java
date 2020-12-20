@@ -6,8 +6,6 @@ package org.theseed.dl4j.jfx;
 import java.util.ArrayList;
 import java.util.List;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.theseed.dl4j.train.IPredictError;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -101,10 +99,6 @@ public class ScatterGraph extends ValidationDisplayReport {
         }
         // Unspool the testing points.
         this.testingPoints.getData().addAll(testingData);
-    }
-
-    @Override
-    public void finishReport(IPredictError errors) {
     }
 
 }

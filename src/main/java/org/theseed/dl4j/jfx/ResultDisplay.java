@@ -18,7 +18,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -40,7 +44,7 @@ public class ResultDisplay extends ResizableController {
     /** current training file */
     private File trainingFile;
     /** results display controller */
-    private IDisplayController displayController;
+    private ValidationDisplayReport displayController;
 
     // CONTROLS
 
@@ -51,6 +55,52 @@ public class ResultDisplay extends ResizableController {
     /** client area for display control */
     @FXML
     private AnchorPane clientPane;
+
+    /** table for prediction statistics */
+    @FXML
+    private TableView<Stat> statsTable;
+
+    /** column for statistic names */
+    @FXML
+    private TableColumn<Stat, String> nameColumn;
+
+    /** column for statistic value (formatted) */
+    @FXML
+    private TableColumn<Stat, String> valueColumn;
+
+    /**
+     * This class contains a statistic for display in the stats table.
+     */
+    public static class Stat {
+        private String name;
+        private double value;
+
+        /**
+         * Create a statistic descriptor.
+         *
+         * @param name		statistic name
+         * @param value 	statistic value
+         */
+        public Stat(String name, double value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        /**
+         * @return the name of the statistic
+         */
+        public String getName() {
+            return this.name;
+        }
+
+        /**
+         * @return the formatted value of the statistic
+         */
+        public String getValue() {
+            return String.format("%14.6f", this.value);
+        }
+
+    }
 
     /**
      * The constructor positions the window.
@@ -100,8 +150,12 @@ public class ResultDisplay extends ResizableController {
         AnchorPane.setTopAnchor(displayNode, 0.0);
         AnchorPane.setBottomAnchor(displayNode, 0.0);
         // Initialize the controller.
-        this.displayController = (IDisplayController) fxmlLoader.getController();
+        this.displayController = (ValidationDisplayReport) fxmlLoader.getController();
         this.displayController.init(labels);
+        this.displayController.register(this.statsTable);
+        // Set up the rules for the table display.
+        this.nameColumn.setCellValueFactory(new PropertyValueFactory<Stat, String>("name"));
+        this.valueColumn.setCellValueFactory(new PropertyValueFactory<Stat, String>("value"));
         // Display the results.
         this.showResults();
     }
@@ -113,7 +167,17 @@ public class ResultDisplay extends ResizableController {
      */
     private void storeTrainingFile(File trainFile) {
         this.trainingFile = trainFile;
-        this.txtTrainingFileName.setText(this.trainingFile.getAbsolutePath());
+        // Get the full name.
+        String displayName = trainFile.getAbsolutePath();
+        Tooltip t = new Tooltip(displayName);
+        // Assemble the last two pieces of the name.
+        String name = trainFile.getName();
+        File parent = trainFile.getParentFile();
+        if (parent != null)
+            displayName = parent.getName() + File.separator + name;
+        // Store the short name in the text field and apply a tooltip.
+        this.txtTrainingFileName.setText(displayName);
+        Tooltip.install(this.txtTrainingFileName, t);
     }
 
     /**
