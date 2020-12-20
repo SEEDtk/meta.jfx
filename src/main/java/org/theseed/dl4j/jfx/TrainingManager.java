@@ -175,10 +175,14 @@ public class TrainingManager extends ResizableController implements ITrainReport
         File newDir = null;
         if (! dirName.isEmpty())
             newDir = new File(dirName);
+        else
+            newDir = new File(System.getProperty("user.dir"));
         // Only proceed if the directory has a parms.prm file.  We don't want to pop up the meta-dialog
         // here.  If there is no parms.prm, we assume the directory has been erased.
         File parmsFile = new File(newDir, "parms.prm");
-        if (parmsFile.exists()) {
+        if (! parmsFile.exists()) {
+            this.setState(false);
+        } else {
             try {
                 boolean ok = this.analyzeModelDirectory(newDir);
                 if (! ok)
