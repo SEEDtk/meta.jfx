@@ -21,7 +21,7 @@
    <children>
       <Label text="Fuzz Factor" GridPane.rowIndex="3" />
       <Slider fx:id="numFuzzFactor" blockIncrement="0.1" majorTickUnit="0.2" max="2.0" min="1.0" minorTickCount="1" prefWidth="200.0" showTickLabels="true" showTickMarks="true" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-      <Button fx:id="btnRun" defaultButton="true" mnemonicParsing="false" onAction="#runBalancer" text="Balance" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+      <Button fx:id="btnRun" defaultButton="true" mnemonicParsing="false" onAction="#runBalancer" text="Convert" GridPane.columnIndex="2" GridPane.rowIndex="3" />
       <Label text="Input File" />
       <TextField fx:id="txtInputFile" editable="false" prefWidth="200.0" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" />
       <Button mnemonicParsing="false" onAction="#selectInput" text="..." GridPane.columnIndex="2" />

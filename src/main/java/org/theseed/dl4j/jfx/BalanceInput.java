@@ -105,8 +105,9 @@ public class BalanceInput extends MovableController {
      * @throws IOException
      */
     public void init(File modelDir, File parmFile, TrainingProcessor.Type type) throws IOException {
-        // Make this a modal dialog window.
+        // Make this window fixed-size and modal.
         this.getStage().initStyle(StageStyle.UTILITY);
+        this.getStage().setResizable(false);
         // Save the parameters and the model directory.
         this.modelDirectory = modelDir;
         this.parmFile = parmFile;
@@ -310,7 +311,12 @@ public class BalanceInput extends MovableController {
         if (this.chkMakeIDs.isSelected()) {
             ParmDescriptor colParm = this.parms.get("meta");
             colParm.setCommented(false);
-            colParm.setValue("id," + colParm.getValue());
+            String newValue = colParm.getValue();
+            if (newValue.isEmpty())
+                newValue = "id";
+            else
+                newValue = "id," + newValue;
+            colParm.setValue(newValue);
             colParm = this.parms.get("id");
             colParm.setCommented(false);
             colParm.setValue("id");
