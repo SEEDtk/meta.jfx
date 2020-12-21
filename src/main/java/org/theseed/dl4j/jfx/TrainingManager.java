@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.dl4j.train.CrossValidateProcessor;
 import org.theseed.dl4j.train.ITrainReporter;
@@ -146,6 +147,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
     /** simulated progress bar container */
     @FXML
     private VBox barContainer;
+
+    /** button to convert input */
+    @FXML
+    private Button btnConvert;
 
     /**
      * Initialize the local fields.
@@ -416,7 +421,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                         List<String> availableHeaders = processor.computeAvailableHeaders(headers, labels);
                         String[] metaCols = this.findMetaColumns(availableHeaders);
                         processor.setMetaCols(metaCols);
-                        if (metaCols.length > 0)
+                        if (metaCols.length > modelType.metaLabel())
                             processor.setIdCol(metaCols[0]);
                         processor.writeParms(parmFile);
                     }
@@ -466,6 +471,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         this.btnViewLog.setDisable(! b);
         this.btnViewResults.setDisable(! b);
         this.btnCrossValidate.setDisable(! b);
+        this.btnConvert.setDisable(! b);
     }
 
     /**
@@ -479,6 +485,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         this.btnCrossValidate.setDisable(b);
         this.btnGetDirectory.setDisable(b);
         this.btnViewResults.setDisable(b);
+        this.btnConvert.setDisable(b);
     }
 
     /**
@@ -608,5 +615,21 @@ public class TrainingManager extends ResizableController implements ITrainReport
         this.barProgress.setPrefHeight(scaledScore);
     }
 
+    /**
+     * Convert a classification input file to a balanced training file.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    private void convertInput(ActionEvent event) {
+        try {
+            Stage convertStage = new Stage();
+            BalanceInput balanceDialog = (BalanceInput) BaseController.loadFXML("BalanceInput", convertStage);
+            balanceDialog.init(this.modelDirectory, this.parmFile, this.modelType);
+            convertStage.showAndWait();
+        } catch (IOException e) {
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Data Converter", e.getMessage());
+        }
+    }
 
 }
