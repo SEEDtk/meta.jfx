@@ -16,19 +16,20 @@
       <RowConstraints />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints />
    </rowConstraints>
    <children>
-      <Label text="Fuzz Factor" GridPane.rowIndex="3" />
-      <Slider fx:id="numFuzzFactor" blockIncrement="0.1" majorTickUnit="0.2" max="2.0" min="1.0" minorTickCount="1" prefWidth="200.0" showTickLabels="true" showTickMarks="true" GridPane.columnIndex="1" GridPane.rowIndex="3" />
       <Button fx:id="btnRun" defaultButton="true" mnemonicParsing="false" onAction="#runBalancer" text="Convert" GridPane.columnIndex="2" GridPane.rowIndex="3" />
       <Label text="Input File" />
       <TextField fx:id="txtInputFile" editable="false" prefWidth="200.0" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" />
       <Button mnemonicParsing="false" onAction="#selectInput" text="..." GridPane.columnIndex="2" />
       <Label text="Format" GridPane.rowIndex="1" />
       <ChoiceBox fx:id="cmbFormat" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-      <Label text="Generate IDs" GridPane.rowIndex="2" />
-      <CheckBox fx:id="chkMakeIDs" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+      <Label text="Generate IDs" GridPane.rowIndex="3" />
+      <CheckBox fx:id="chkMakeIDs" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <Label text="Label" GridPane.rowIndex="2" />
+      <ChoiceBox fx:id="cmbLabel" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
    </children>
    <padding>
       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

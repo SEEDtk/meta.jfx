@@ -15,7 +15,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.input.MouseEvent;
-import javafx.stage.StageStyle;
 
 /**
  * This is the dialog for selecting the metadata columns.  It takes as input a list of column headers and places them in the
@@ -68,9 +67,7 @@ public class MetaDialog extends MovableController {
     public void init(String[] headers, TrainingProcessor.Type modelType) {
         // Start out with everything unselected.
         leftList.getItems().addAll(headers);
-        // Make this window fixed-size and modal.
-        this.getStage().initStyle(StageStyle.UTILITY);
-        this.getStage().setResizable(false);
+        // Fix the instructions.
         if (modelType == TrainingProcessor.Type.CLASS) {
             instructions.setText(INSTRUCTIONS + " The last column selected will be the label (this is required).");
         } else {

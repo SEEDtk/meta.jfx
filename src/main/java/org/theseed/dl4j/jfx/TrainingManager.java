@@ -53,6 +53,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
     // FIELDS
     /** current model directory */
     private File modelDirectory;
+    /** TRUE if a model file exists */
+    private File modelFile;
     /** current model type */
     private TrainingProcessor.Type modelType;
     /** current model's parameter file */
@@ -108,6 +110,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
     @FXML
     private TextField txtScore;
 
+    /** text display for current rating */
+    @FXML
+    private TextField txtRating;
+
     /** text display for best epoch */
     @FXML
     private TextField txtBestEpoch;
@@ -151,6 +157,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
     /** button to convert input */
     @FXML
     private Button btnConvert;
+
+    /** button to view training file */
+    @FXML
+    private Button btnTrainingView;
 
     /**
      * Initialize the local fields.
@@ -372,9 +382,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
         boolean retVal = false;
         if (newDir == null) {
             // Here we have no model directory.
-            this.modelDirectory = newDir;
+            this.modelDirectory = null;
             this.setState(false);
-            this.lblModelType.setText("");
             retVal = true;
         } else {
             // Now we need to determine what type of model this is.
@@ -382,6 +391,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
             File trainFile = new File(newDir, "training.tbl");
             if (labelFile.exists() && trainFile.exists()) {
                 this.modelDirectory = newDir;
+                this.modelFile = new File(newDir, "model.ser");
                 txtModelDirectory.setText(newDir.getName());
                 this.setPref("modelDirectory", newDir.getAbsolutePath());
                 Set<String> labels = LineReader.readSet(labelFile);
@@ -469,9 +479,12 @@ public class TrainingManager extends ResizableController implements ITrainReport
         this.btnAbortCommand.setDisable(true);
         this.btnTrainingSearch.setDisable(! b);
         this.btnViewLog.setDisable(! b);
-        this.btnViewResults.setDisable(! b);
+        this.btnViewResults.setDisable(! b  || ! this.modelFile.exists());
         this.btnCrossValidate.setDisable(! b);
         this.btnConvert.setDisable(! b);
+        this.btnTrainingView.setDisable(! b);
+        if (! b)
+            this.lblModelType.setText("");
     }
 
     /**
@@ -484,7 +497,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         this.btnTrainingSearch.setDisable(b);
         this.btnCrossValidate.setDisable(b);
         this.btnGetDirectory.setDisable(b);
-        this.btnViewResults.setDisable(b);
+        this.btnViewResults.setDisable(b || ! this.modelFile.exists());
         this.btnConvert.setDisable(b);
     }
 
@@ -551,7 +564,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
     }
 
     @Override
-    public void displayEpoch(int epoch, double score, boolean saved) throws InterruptedException {
+    public void displayEpoch(int epoch, double score, double rating, boolean saved) throws InterruptedException {
         // Check for an abort.
         if (this.stopFlag) {
             throw new InterruptedException("Stop requested by user.");
@@ -567,7 +580,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
                     // Update the epoch and the score.
                     String epochText = Integer.toString(epoch);
                     txtEpoch.setText(epochText);
-                    txtScore.setText(String.format("%14.8g", score));
+                    txtScore.setText(String.format("%14.6g", score));
+                    txtRating.setText(String.format("%14.6g", rating));
                     setProgress(score);
                     // If this is the best epoch, remember it.
                     if (saved)
@@ -625,10 +639,34 @@ public class TrainingManager extends ResizableController implements ITrainReport
         try {
             Stage convertStage = new Stage();
             BalanceInput balanceDialog = (BalanceInput) BaseController.loadFXML("BalanceInput", convertStage);
-            balanceDialog.init(this.modelDirectory, this.parmFile, this.modelType);
-            convertStage.showAndWait();
+            TrainingProcessor processor = TrainingProcessor.create(this.modelType);
+            Parms parms = new Parms(this.parmFile);
+            if (! processor.setupParameters(parms, this.modelDirectory))
+                throw new IOException("Invalid parameters in parameter file.");
+            else {
+                balanceDialog.init(this.modelDirectory, this.parmFile, processor);
+                convertStage.showAndWait();
+            }
         } catch (IOException e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Data Converter", e.getMessage());
+        }
+    }
+
+    /**
+     * Display the training file.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    private void viewTrainingFile(ActionEvent event) {
+        try {
+            Stage viewStage = new Stage();
+            File trainFile = new File(this.modelDirectory, "training.tbl");
+            TrainingView viewDialog = (TrainingView) BaseController.loadFXML("TrainingView", viewStage);
+            viewDialog.init(trainFile);
+            viewStage.show();
+        } catch (IOException e) {
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Training File Viewer", e.getMessage());
         }
     }
 

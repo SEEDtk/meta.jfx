@@ -105,7 +105,15 @@ public abstract class ValidationDisplayReport implements IValidationReport {
         double[] values = errors.getStats();
         for (int i = 0; i < names.length; i++)
             this.statsList.add(new ResultDisplay.Stat(names[i], values[i]));
+        // Add any other stats from the subclass.
+        List<ResultDisplay.Stat> others = this.getStats();
+        others.stream().forEach(x -> this.statsList.add(x));
     }
+
+    /**
+     * @return a list of additional statistics to display
+     */
+    public abstract List<ResultDisplay.Stat> getStats();
 
     /**
      * This method allows the subclass to do its own special processing at the end of the report.

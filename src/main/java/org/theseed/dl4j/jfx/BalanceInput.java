@@ -5,20 +5,17 @@ package org.theseed.dl4j.jfx;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Iterator;
-import java.util.OptionalInt;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
+import java.util.List;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.theseed.dl4j.DistributedOutputStream;
 import org.theseed.dl4j.train.TrainingProcessor;
-import org.theseed.io.BalancedOutputStream;
 import org.theseed.io.LineReader;
 import org.theseed.io.ParmDescriptor;
 import org.theseed.io.ParmFile;
-import org.theseed.io.Shuffler;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.MovableController;
 
@@ -28,11 +25,9 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.stage.StageStyle;
 
 /**
  * This controller manages the process of creating a training file from external data.  There must
@@ -54,10 +49,8 @@ public class BalanceInput extends MovableController {
     private ParmFile parms;
     /** parameter file name */
     private File parmFile;
-    /** current input row index */
-    private int rowIdx;
-    /** current model type */
-    private TrainingProcessor.Type modelType;
+    /** current model processor */
+    private TrainingProcessor processor;
 
     // CONTROLS
 
@@ -69,10 +62,6 @@ public class BalanceInput extends MovableController {
     @FXML
     private TextField txtInputFile;
 
-    /** input for fuzz factor */
-    @FXML
-    private Slider numFuzzFactor;
-
     /** button to start the process */
     @FXML
     private Button btnRun;
@@ -80,6 +69,10 @@ public class BalanceInput extends MovableController {
     /** checked if we need to add an ID field */
     @FXML
     private CheckBox chkMakeIDs;
+
+    /** choice box for selecting label of interest */
+    @FXML
+    private ChoiceBox<String> cmbLabel;
 
     public BalanceInput() {
         super(200, 200);
@@ -104,19 +97,19 @@ public class BalanceInput extends MovableController {
      *
      * @throws IOException
      */
-    public void init(File modelDir, File parmFile, TrainingProcessor.Type type) throws IOException {
-        // Make this window fixed-size and modal.
-        this.getStage().initStyle(StageStyle.UTILITY);
-        this.getStage().setResizable(false);
+    public void init(File modelDir, File parmFile, TrainingProcessor processor) throws IOException {
         // Save the parameters and the model directory.
         this.modelDirectory = modelDir;
         this.parmFile = parmFile;
         this.parms = new ParmFile(parmFile);
-        this.modelType = type;
-        // Initialize the combo box and the slider.
+        this.processor = processor;
+        // Initialize the format combo box.
         this.cmbFormat.getItems().addAll(InputFormat.values());
         this.cmbFormat.getSelectionModel().select(InputFormat.PATRIC);
-        this.numFuzzFactor.setValue(1.0);
+        // Set up the label combo box.
+        List<String> labelCols = processor.getLabelCols();
+        this.cmbLabel.getItems().addAll(labelCols);
+        this.cmbLabel.getSelectionModel().select(0);
         // Find out if we should generate IDs.
         this.chkMakeIDs.setSelected(this.parms.get("id").isCommented());
         // Denote we are not ready to run.
@@ -167,14 +160,8 @@ public class BalanceInput extends MovableController {
             String[] headers = type.getHeaders(inStream, trainingFile);
             // Make a safety copy of the training file.
             FileUtils.copyFile(trainingFile, backupFile);
-            // Denote we have not written any output.
-            this.rowIdx = 0;
             // Process the input to produce the output.
-            boolean ok;
-            if (this.modelType == TrainingProcessor.Type.CLASS)
-                ok = balanceClassInput(trainingFile, type, inStream, headers);
-            else
-                ok = scrambleRegressionInput(trainingFile, type, inStream, headers);
+            boolean ok = balanceInput(trainingFile, type, inStream, headers);
             // End the dialog.
             if (ok) {
                 this.getStage().close();
@@ -197,8 +184,7 @@ public class BalanceInput extends MovableController {
     }
 
     /**
-     * This is the balancer for a regression file.  The output is written in scrambled order.
-     *
+     * Produce the output by balancing the input.
      *
      * @param trainingFile	name of the output training file
      * @param type			type of input
@@ -207,89 +193,34 @@ public class BalanceInput extends MovableController {
      *
      * @return TRUE if successful, else FALSE
      */
-    private boolean scrambleRegressionInput(File trainingFile, InputFormat type, Iterator<String> inStream,
+    private boolean balanceInput(File trainingFile, InputFormat type, Iterator<String> inStream,
             String[] headers) {
         boolean retVal = false;
-        try (PrintWriter outStream = new PrintWriter(trainingFile)) {
-            // Note we use -1 to denote there is no label column to remove.
-            outStream.write(this.dataPart(headers, -1));
-            // Read the input file.
-            Shuffler<String[]> buffer = new Shuffler<String[]>(5000);
+        // Add the ID to the headers if we need it.
+        String[] actualHeaders = headers;
+        if (this.chkMakeIDs.isSelected())
+            actualHeaders = ArrayUtils.add(headers, "id");
+        int idCounter = 1;
+        try {
+            DistributedOutputStream outStream = DistributedOutputStream.create(trainingFile, this.processor, this.cmbLabel.getValue(), actualHeaders);
             while (inStream.hasNext()) {
                 String[] items = type.getLine(inStream);
-                buffer.add(items);
+                // Only proceed if there is data in the line.  A lot of datasets out there have blanks in them.
+                if (items.length > 0) {
+                    if (this.chkMakeIDs.isSelected()) {
+                        String id = String.format("row-%04d", idCounter++);
+                        items = ArrayUtils.add(items, id);
+                    }
+                    outStream.write(items);
+                }
             }
-            // Scramble it.
-            buffer.shuffle(buffer.size());
-            // Write the scrambled lines.
-            int outCount = 0;
-            for (String[] items : buffer) {
-                String line = this.dataPart(items, -1);
-                outStream.write(line);
-                outCount++;
-            }
+            outStream.close();
             // Make the necessary updates to the parm file.
-            this.updateParmFile(outCount);
+            this.updateParmFile(outStream.getOutputCount());
             // Denote we've succeeded.
             retVal = true;
         } catch (IOException e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Writing Output", e.getMessage());
-        }
-        return retVal;
-    }
-
-    /**
-     * This is the balancer for a classification file.  The output
-     * is written in such a way as to provide an even distribution
-     * of classes in each part of the output file.
-     *
-     * @param trainingFile	name of the output training file
-     * @param type			type of input
-     * @param inStream		input stream
-     * @param headers		headers from the training file
-     *
-     * @return TRUE if successful, else FALSE
-     */
-    public boolean balanceClassInput(File trainingFile, InputFormat type, Iterator<String> inStream,
-            String[] headers) {
-        boolean retVal = false;
-        // Find the label and build the new header line.
-        String labelCol = this.parms.get("col").getValue();
-        int labelIdx = -1;
-        if (headers[0].contentEquals(labelCol))
-            labelIdx = 0;
-        else {
-            OptionalInt found = IntStream.range(1, headers.length).filter(i -> labelCol.contentEquals(headers[i])).findFirst();
-            if (! found.isPresent())
-                BaseController.messageBox(Alert.AlertType.ERROR, "Error in Training File",
-                        "Label column \"" + labelCol + "\" is not found.");
-            else
-                labelIdx = found.getAsInt();
-        }
-        if (labelIdx >= 0) {
-            // Open the training file for output.
-            try (BalancedOutputStream outStream = new BalancedOutputStream(this.numFuzzFactor.getValue(),
-                    trainingFile)) {
-                // Write the new header.
-                outStream.writeImmediate(headers[labelIdx],
-                        this.dataPart(headers, labelIdx));
-                // Process the data lines.
-                while (inStream.hasNext()) {
-                    String[] items = type.getLine(inStream);
-                    // Note we skip blank lines, which are a hazard in public datasets.
-                    if (items.length > 0) {
-                        String label = items[labelIdx];
-                        String data = this.dataPart(items, labelIdx);
-                        outStream.write(label, data);
-                    }
-                }
-                // Make the necessary updates to the parm file.
-                this.updateParmFile(outStream.getOutputCount());
-                // Denote we've succeeded.
-                retVal = true;
-            } catch (IOException e) {
-                BaseController.messageBox(Alert.AlertType.ERROR, "Error Writing Output", e.getMessage());
-            }
         }
         return retVal;
     }
@@ -314,37 +245,17 @@ public class BalanceInput extends MovableController {
             String newValue = colParm.getValue();
             if (newValue.isEmpty())
                 newValue = "id";
-            else
-                newValue = "id," + newValue;
+            else {
+                String[] parts = StringUtils.split(newValue, ',');
+                if (! Arrays.stream(parts).anyMatch(x -> x.contentEquals("id")))
+                    newValue = "id," + newValue;
+            }
             colParm.setValue(newValue);
             colParm = this.parms.get("id");
             colParm.setCommented(false);
             colParm.setValue("id");
         }
         this.parms.save(this.parmFile);
-    }
-
-    /**
-     * @return the data part of the specified line
-     *
-     * @param items			array of input columns
-     * @param labelIdx		array index of the label column
-     */
-    private String dataPart(String[] items, int labelIdx) {
-        // Check to see if we are generating IDs.
-        String retVal = "";
-        if (this.chkMakeIDs.isSelected()) {
-            // Here we need to add the ID column.
-            if (this.rowIdx == 0)
-                retVal = "id\t";
-            else
-                retVal = String.format("row-%04d\t", rowIdx);
-            this.rowIdx++;
-        }
-        // Add the rest of the data.
-        retVal += IntStream.range(0, items.length).filter(i -> i != labelIdx)
-                .mapToObj(i -> items[i]).collect(Collectors.joining("\t"));
-        return retVal;
     }
 
     /**

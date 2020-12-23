@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.theseed.dl4j.jfx.ResultDisplay.Stat;
 import org.theseed.dl4j.train.ClassPredictError;
 import org.theseed.jfx.DragResizer;
 
@@ -319,6 +320,23 @@ public class ConfusionMatrix extends ValidationDisplayReport implements DragResi
             }
         }
 
+    }
+
+    @Override
+    public List<Stat> getStats() {
+        // Compute the testing set accuracy.
+        int totalError = 0;
+        int total = 0;
+        for (int o = 0; o < this.labels.size(); o++) {
+            for (int e = 0; e < this.labels.size(); e++) {
+                int count = this.testMatrix[o][e];
+                if (o != e) totalError += count;
+                total += count;
+            }
+        }
+        List<ResultDisplay.Stat> retVal = new ArrayList<>();
+        retVal.add(new ResultDisplay.Stat("Testing error", ((double) totalError) / total));
+        return retVal;
     }
 
 }

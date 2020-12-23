@@ -43,6 +43,12 @@
             </HBox>
             <HBox spacing="2.0">
                <children>
+                  <Label text="Rating" />
+                  <TextField fx:id="txtRating" editable="false" prefHeight="25.0" prefWidth="125.0" styleClass="readOnly" />
+               </children>
+            </HBox>
+            <HBox spacing="2.0">
+               <children>
                   <Label text="Best Epoch" />
                   <TextField fx:id="txtBestEpoch" editable="false" prefHeight="25.0" prefWidth="70.0" styleClass="readOnly" />
                </children>
@@ -55,6 +61,7 @@
             <Button fx:id="btnViewLog" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewLog" prefWidth="125.0" text="View Log" />
             <Button fx:id="btnViewResults" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showModelResults" prefWidth="125.0" text="View Results" />
             <Button fx:id="btnConvert" mnemonicParsing="false" onAction="#convertInput" prefWidth="125.0" text="Convert Data" />
+            <Button fx:id="btnTrainingView" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewTrainingFile" prefWidth="125.0" text="Show Training File" />
          </children>
       </TilePane>
       <Button fx:id="btnAbortCommand" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#abortCommand" text="Abort Command" textFill="RED" GridPane.columnIndex="3" GridPane.rowIndex="2" />

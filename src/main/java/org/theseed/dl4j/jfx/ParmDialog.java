@@ -24,7 +24,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.layout.GridPane;
-import javafx.stage.StageStyle;
 
 /**
  * @author Bruce Parrello
@@ -77,9 +76,6 @@ public class ParmDialog extends MovableController {
      * @param modelType		type of model-- CLASS or REGRESSION
      */
     public void init(File parmFile, TrainingProcessor.Type modelType) {
-        // Make this window fixed-size and modal.
-        this.getStage().initStyle(StageStyle.UTILITY);
-        this.getStage().setResizable(false);
         // Save the model type and parm file name.
         this.parmFile = parmFile;
         this.modelType = modelType;
