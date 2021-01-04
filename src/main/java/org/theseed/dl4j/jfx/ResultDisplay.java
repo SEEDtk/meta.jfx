@@ -11,6 +11,7 @@ import java.util.List;
 import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.ResizableController;
+import org.theseed.jfx.Stat;
 import org.theseed.reports.IValidationReport;
 
 import javafx.event.ActionEvent;
@@ -18,11 +19,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -59,48 +58,6 @@ public class ResultDisplay extends ResizableController {
     /** table for prediction statistics */
     @FXML
     private TableView<Stat> statsTable;
-
-    /** column for statistic names */
-    @FXML
-    private TableColumn<Stat, String> nameColumn;
-
-    /** column for statistic value (formatted) */
-    @FXML
-    private TableColumn<Stat, String> valueColumn;
-
-    /**
-     * This class contains a statistic for display in the stats table.
-     */
-    public static class Stat {
-        private String name;
-        private double value;
-
-        /**
-         * Create a statistic descriptor.
-         *
-         * @param name		statistic name
-         * @param value 	statistic value
-         */
-        public Stat(String name, double value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        /**
-         * @return the name of the statistic
-         */
-        public String getName() {
-            return this.name;
-        }
-
-        /**
-         * @return the formatted value of the statistic
-         */
-        public String getValue() {
-            return String.format("%14.6f", this.value);
-        }
-
-    }
 
     /**
      * The constructor positions the window.
@@ -154,8 +111,7 @@ public class ResultDisplay extends ResizableController {
         this.displayController.init(labels);
         this.displayController.register(this.statsTable);
         // Set up the rules for the table display.
-        this.nameColumn.setCellValueFactory(new PropertyValueFactory<Stat, String>("name"));
-        this.valueColumn.setCellValueFactory(new PropertyValueFactory<Stat, String>("value"));
+        Stat.setupTable(this.statsTable);
         // Display the results.
         this.showResults();
     }

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.theseed.dl4j.jfx.ResultDisplay.Stat;
+import org.theseed.jfx.Stat;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

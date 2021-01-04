@@ -14,6 +14,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.dl4j.train.IPredictError;
 import org.theseed.io.LineReader;
+import org.theseed.jfx.Stat;
 import org.theseed.reports.IValidationReport;
 
 import javafx.collections.ObservableList;
@@ -34,7 +35,7 @@ public abstract class ValidationDisplayReport implements IValidationReport {
     /** next available ID number */
     private int idNum;
     /** table for statistical output */
-    private ObservableList<ResultDisplay.Stat> statsList;
+    private ObservableList<Stat> statsList;
 
     /**
      * Construct a blank result report object.
@@ -56,7 +57,7 @@ public abstract class ValidationDisplayReport implements IValidationReport {
      *
      * @param statsTable	table for displaying prediction statistics
      */
-    public void register(TableView<ResultDisplay.Stat> statsTable) {
+    public void register(TableView<Stat> statsTable) {
         this.statsList = statsTable.getItems();
     }
 
@@ -104,16 +105,16 @@ public abstract class ValidationDisplayReport implements IValidationReport {
         String[] names = errors.getTitles();
         double[] values = errors.getStats();
         for (int i = 0; i < names.length; i++)
-            this.statsList.add(new ResultDisplay.Stat(names[i], values[i]));
+            this.statsList.add(new Stat(names[i], values[i]));
         // Add any other stats from the subclass.
-        List<ResultDisplay.Stat> others = this.getStats();
+        List<Stat> others = this.getStats();
         others.stream().forEach(x -> this.statsList.add(x));
     }
 
     /**
      * @return a list of additional statistics to display
      */
-    public abstract List<ResultDisplay.Stat> getStats();
+    public abstract List<Stat> getStats();
 
     /**
      * This method allows the subclass to do its own special processing at the end of the report.

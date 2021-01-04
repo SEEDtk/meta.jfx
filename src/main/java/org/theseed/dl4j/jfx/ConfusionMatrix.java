@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.theseed.dl4j.jfx.ResultDisplay.Stat;
 import org.theseed.dl4j.train.ClassPredictError;
 import org.theseed.jfx.DragResizer;
+import org.theseed.jfx.Stat;
 
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -334,8 +334,8 @@ public class ConfusionMatrix extends ValidationDisplayReport implements DragResi
                 total += count;
             }
         }
-        List<ResultDisplay.Stat> retVal = new ArrayList<>();
-        retVal.add(new ResultDisplay.Stat("Testing error", ((double) totalError) / total));
+        List<Stat> retVal = new ArrayList<>();
+        retVal.add(new Stat("Testing error", ((double) totalError) / total));
         return retVal;
     }
 
