@@ -56,8 +56,5 @@ public class StatisticsAnalysis extends ColumnAnalysis {
         retVal.setItems(tableData);
         return retVal;
     }
-    // FIELDS
-    // TODO data members for StatisticsAnalysis
 
-    // TODO constructors and methods for StatisticsAnalysis
 }
