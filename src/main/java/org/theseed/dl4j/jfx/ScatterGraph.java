@@ -98,8 +98,6 @@ public class ScatterGraph extends ValidationDisplayReport {
 
     @Override
     public void reportOutput(List<String> metaData, INDArray expected, INDArray output) {
-        // Save the testing data points in here.  We want them on top.
-        List<XYChart.Data<Double, Double>> testingData = new ArrayList<>(1000);
         // Loop through the metadata, peeling off predictions.
         for (int r = 0; r < metaData.size(); r++) {
             String id = this.getId(metaData.get(r));
@@ -113,10 +111,8 @@ public class ScatterGraph extends ValidationDisplayReport {
             if (this.isTrained(id))
                 this.trainingPoints.getData().add(dataPoint);
             else
-                testingData.add(dataPoint);
+                this.testingPoints.getData().add(dataPoint);
         }
-        // Unspool the testing points.
-        this.testingPoints.getData().addAll(testingData);
         // Fill in the outlier table.
         this.outlierItems.clear();
         this.outlierItems.addAll(this.outliers);
