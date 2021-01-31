@@ -14,6 +14,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.dl4j.train.IPredictError;
 import org.theseed.io.LineReader;
+import org.theseed.jfx.Prediction;
 import org.theseed.jfx.Stat;
 import org.theseed.reports.IValidationReport;
 
@@ -57,9 +58,16 @@ public abstract class ValidationDisplayReport implements IValidationReport {
      *
      * @param statsTable	table for displaying prediction statistics
      */
-    public void register(TableView<Stat> statsTable) {
+    public void registerStatsTable(TableView<Stat> statsTable) {
         this.statsList = statsTable.getItems();
     }
+
+    /**
+     * Process the table used to display outliers.
+     *
+     * @parm outlierTable	table for displaying outliers
+     */
+    public abstract void registerOutlierTable(TableView<Prediction> outlierTable);
 
     /**
      * @return the ID string from a row's metadata

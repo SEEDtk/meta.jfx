@@ -139,10 +139,8 @@ public class BalanceInput extends MovableController {
     }
 
     /**
-     * Create the balanced input file.  Note that we suppress a dead-code warning
-     * because it's a false positive.  If an exception occurs in one of the
-     * subroutines, "outStream" will be non-null in the handler.  Java cannot
-     * figure this out.
+     * Create the balanced input file.  This randomizes the data in such a way that different
+     * output values are evenly distributed.
      *
      * @param event		event descriptor
      */

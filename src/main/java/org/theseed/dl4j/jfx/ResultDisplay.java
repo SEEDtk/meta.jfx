@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.jfx.BaseController;
+import org.theseed.jfx.Prediction;
 import org.theseed.jfx.ResizableController;
 import org.theseed.jfx.Stat;
 import org.theseed.reports.IValidationReport;
@@ -58,6 +59,10 @@ public class ResultDisplay extends ResizableController {
     /** table for prediction statistics */
     @FXML
     private TableView<Stat> statsTable;
+
+    /** table for outliers (regression only) */
+    @FXML
+    private TableView<Prediction> outlierTable;
 
     /**
      * The constructor positions the window.
@@ -109,7 +114,8 @@ public class ResultDisplay extends ResizableController {
         // Initialize the controller.
         this.displayController = (ValidationDisplayReport) fxmlLoader.getController();
         this.displayController.init(labels);
-        this.displayController.register(this.statsTable);
+        this.displayController.registerStatsTable(this.statsTable);
+        this.displayController.registerOutlierTable(this.outlierTable);
         // Set up the rules for the table display.
         Stat.setupTable(this.statsTable);
         // Display the results.
@@ -183,6 +189,7 @@ public class ResultDisplay extends ResizableController {
      */
     private void showResults() {
         try {
+            // Display the predictions.
             processor.runPredictions(this.displayController, this.trainingFile);
         } catch (IOException e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "PredictionError", e.getMessage());

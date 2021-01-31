@@ -46,8 +46,7 @@ public class Stat {
     /**
      * Initialize the table to contain the statistics.
      *
-     * @param nameColumn	column to contain the name
-     * @param valueColumn	column to contain the table
+     * @param table		table to contain the statistics
      */
     public static void setupTable(TableView<Stat> table) {
         TableColumn<Stat, String> nameColumn = new TableColumn<Stat, String>("name");

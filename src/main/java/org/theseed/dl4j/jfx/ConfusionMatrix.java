@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.theseed.dl4j.train.ClassPredictError;
 import org.theseed.jfx.DragResizer;
+import org.theseed.jfx.Prediction;
 import org.theseed.jfx.Stat;
 
 import javafx.beans.property.SimpleIntegerProperty;
@@ -337,6 +338,12 @@ public class ConfusionMatrix extends ValidationDisplayReport implements DragResi
         List<Stat> retVal = new ArrayList<>();
         retVal.add(new Stat("Testing error", ((double) totalError) / total));
         return retVal;
+    }
+
+    @Override
+    public void registerOutlierTable(TableView<Prediction> outlierTable) {
+        // Outliers are not displayed for classification.
+        outlierTable.setVisible(false);
     }
 
 }
