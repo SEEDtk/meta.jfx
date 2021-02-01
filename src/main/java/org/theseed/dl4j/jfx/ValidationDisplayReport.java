@@ -110,6 +110,9 @@ public abstract class ValidationDisplayReport implements IValidationReport {
         this.finishReport();
         // Now fill in the stats table.
         this.statsList.clear();
+        // Start with the training set size.
+        this.statsList.add(new Stat.Int("Training Set Size", this.trained.size()));
+        // Add the numerical stats from the validator.
         String[] names = errors.getTitles();
         double[] values = errors.getStats();
         for (int i = 0; i < names.length; i++)
