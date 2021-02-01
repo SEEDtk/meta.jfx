@@ -3,7 +3,6 @@
  */
 package org.theseed.dl4j.jfx;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
@@ -13,6 +12,8 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.theseed.jfx.Prediction;
 import org.theseed.jfx.Stat;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -20,6 +21,8 @@ import javafx.scene.chart.ScatterChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 
 /**
  * This is the controller for the scatter graph that displays expected vs. predicted values of a regression model.
@@ -139,12 +142,37 @@ public class ScatterGraph extends ValidationDisplayReport {
         return Collections.emptyList();
     }
 
+    /**
+      * This nested class listens for a row selection in the outlier table.
+      */
+    public class RowListener implements ChangeListener<Prediction> {
+
+        @Override
+        public void changed(ObservableValue<? extends Prediction> observable, Prediction oldValue,
+                Prediction newValue) {
+            // Save the item ID in the clipboard.
+            final Clipboard clipboard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.putString(newValue.getId());
+            clipboard.setContent(content);
+        }
+    }
+
     @Override
     public void registerOutlierTable(TableView<Prediction> outlierTable) {
         // Set up the table columns.
         Prediction.setupTable(outlierTable);
         // Get the table's row list.
         this.outlierItems = outlierTable.getItems();
+        // Create the selection event.
+        outlierTable.getSelectionModel().selectedItemProperty().addListener(new RowListener());
+    }
+
+    @Override
+    public void finishReport() {
+        ObservableList<XYChart.Data<Double, Double>> testingData = this.testingPoints.getData();
+        for (XYChart.Data<Double, Double> testingPoint : testingData)
+            testingPoint.getNode().toFront();
     }
 
 }
