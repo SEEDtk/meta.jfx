@@ -11,11 +11,12 @@ import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.theseed.dl4j.LossFunctionType;
 import org.theseed.dl4j.Regularization;
+import org.theseed.dl4j.decision.RandomForest;
 import org.theseed.dl4j.jfx.parms.ParmDialogGroup;
 import org.theseed.dl4j.jfx.parms.ParmPaneBuilder;
 import org.theseed.dl4j.train.GradientUpdater;
+import org.theseed.dl4j.train.ModelType;
 import org.theseed.dl4j.train.Trainer;
-import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.io.ParmFile;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.MovableController;
@@ -35,7 +36,7 @@ public class ParmDialog extends MovableController {
     /** TRUE if the user hit "SAVE AND RUN", FALSE for "CANCEL" */
     private boolean okFlag;
     /** processor model type */
-    private TrainingProcessor.Type modelType;
+    private ModelType modelType;
     /** parameter map */
     private ParmFile parms;
     /** parameter file name */
@@ -75,7 +76,7 @@ public class ParmDialog extends MovableController {
      * @param parmFile		parameter file to read and modify
      * @param modelType		type of model-- CLASS or REGRESSION
      */
-    public void init(File parmFile, TrainingProcessor.Type modelType) {
+    public void init(File parmFile, ModelType modelType) {
         // Save the model type and parm file name.
         this.parmFile = parmFile;
         this.modelType = modelType;
@@ -87,28 +88,50 @@ public class ParmDialog extends MovableController {
         }
         // Now we need to build the parameter dialog groups.  First the model structure parameters.
         ParmPaneBuilder builder = new ParmPaneBuilder(this.structurePane, this.parms);
+        if (modelType == ModelType.DECISION)
+            deciderStructurePane(builder);
+        else
+            neuralStructurePane(builder);
+        // Next, the search tuning parameters.
+        builder = new ParmPaneBuilder(this.tuningPane, this.parms);
+        if (modelType == ModelType.DECISION)
+            deciderSearchPane(builder);
+        else
+            neuralSearchPane(builder);
+    }
+
+    /**
+     * Create the parameters for the search pane in a decision model.
+     *
+     * @param builder	builder for the search pane
+     */
+    private void deciderSearchPane(ParmPaneBuilder builder) {
         builder.addText("meta");
         builder.addText("col");
         builder.addText("id");
-        builder.addChoices("init", Activation.values());
-        builder.addChoices("activation", Activation.values());
-        builder.addFlag("raw");
-        builder.addFlag("batch");
-        ParmDialogGroup cnn = builder.addText("cnn");
-        ParmDialogGroup filters = builder.addText("filters");
-        ParmDialogGroup strides = builder.addText("strides");
-        ParmDialogGroup subs = builder.addText("sub");
-        if (cnn != null)
-            cnn.setGrouped(filters, strides, subs);
-        builder.addText("lstm");
-        ParmDialogGroup wGroup = builder.addText("widths");
-        ParmDialogGroup bGroup = builder.addText("balanced");
-        if (bGroup != null && wGroup != null) {
-            wGroup.setExclusive(bGroup);
-            bGroup.setExclusive(wGroup);
-        }
-        // Next, the search tuning parameters.
-        builder = new ParmPaneBuilder(this.tuningPane, this.parms);
+        builder.addText("seed");
+        builder.addChoices("method", RandomForest.Method.values());
+    }
+
+    /**
+     * Create the parameters for the structure pane in a decision model.
+     *
+     * @param builder	builder for the structure pane
+     */
+    private void deciderStructurePane(ParmPaneBuilder builder) {
+        builder.addText("maxFeatures");
+        builder.addText("nEstimators");
+        builder.addText("minSplit");
+        builder.addText("maxDepth");
+        builder.addText("sampleSize");
+    }
+
+    /**
+     * Create the parameters for the search pane in a neural net model.
+     *
+     * @param builder	builder for the search pane
+     */
+    public void neuralSearchPane(ParmPaneBuilder builder) {
         Enum<?>[] preferTypes = this.modelType.getPreferTypes();
         builder.addChoices("prefer", preferTypes);
         builder.addChoices("method", Trainer.Type.values());
@@ -129,6 +152,34 @@ public class ParmDialog extends MovableController {
         builder.addText("learnRate");
         builder.addChoices("bUpdater", GradientUpdater.Type.values());
         builder.addText("updateRate");
+    }
+
+    /**
+     * Create the parameters for the structure pane in a neural net model.
+     *
+     * @param builder	builder for the structure pane
+     */
+    public void neuralStructurePane(ParmPaneBuilder builder) {
+        builder.addText("meta");
+        builder.addText("col");
+        builder.addText("id");
+        builder.addChoices("init", Activation.values());
+        builder.addChoices("activation", Activation.values());
+        builder.addFlag("raw");
+        builder.addFlag("batch");
+        ParmDialogGroup cnn = builder.addText("cnn");
+        ParmDialogGroup filters = builder.addText("filters");
+        ParmDialogGroup strides = builder.addText("strides");
+        ParmDialogGroup subs = builder.addText("sub");
+        if (cnn != null)
+            cnn.setGrouped(filters, strides, subs);
+        builder.addText("lstm");
+        ParmDialogGroup wGroup = builder.addText("widths");
+        ParmDialogGroup bGroup = builder.addText("balanced");
+        if (bGroup != null && wGroup != null) {
+            wGroup.setExclusive(bGroup);
+            bGroup.setExclusive(wGroup);
+        }
     }
 
     /**

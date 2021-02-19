@@ -8,7 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-import org.theseed.dl4j.train.TrainingProcessor;
+import org.theseed.dl4j.train.ITrainingProcessor;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.Prediction;
 import org.theseed.jfx.ResizableController;
@@ -40,7 +40,7 @@ public class ResultDisplay extends ResizableController {
 
     // FIELDS
     /** current model processor */
-    private TrainingProcessor processor;
+    private ITrainingProcessor processor;
     /** current training file */
     private File trainingFile;
     /** results display controller */
@@ -89,7 +89,7 @@ public class ResultDisplay extends ResizableController {
      *
      * @throws IOException
      */
-    public void init(TrainingProcessor processor, String displayPane) throws IOException {
+    public void init(ITrainingProcessor processor, String displayPane) throws IOException {
         // Get the stage.
         Stage currStage = this.getStage();
         // Save the processor and get the model directory.

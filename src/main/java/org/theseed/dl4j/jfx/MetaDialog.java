@@ -6,7 +6,7 @@ package org.theseed.dl4j.jfx;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.theseed.dl4j.train.TrainingProcessor;
+import org.theseed.dl4j.train.ModelType;
 import org.theseed.jfx.MovableController;
 
 import javafx.collections.ObservableList;
@@ -64,11 +64,11 @@ public class MetaDialog extends MovableController {
      * @param headers		column header names
      * @param modelType		relevant model type (CLASS or REGRESSION)
      */
-    public void init(String[] headers, TrainingProcessor.Type modelType) {
+    public void init(String[] headers, ModelType modelType) {
         // Start out with everything unselected.
         leftList.getItems().addAll(headers);
         // Fix the instructions.
-        if (modelType == TrainingProcessor.Type.CLASS) {
+        if (modelType != ModelType.REGRESSION) {
             instructions.setText(INSTRUCTIONS + " The last column selected will be the label (this is required).");
         } else {
             instructions.setText(INSTRUCTIONS);

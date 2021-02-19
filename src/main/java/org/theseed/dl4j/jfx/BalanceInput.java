@@ -12,7 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.dl4j.DistributedOutputStream;
-import org.theseed.dl4j.train.TrainingProcessor;
+import org.theseed.dl4j.train.ITrainingProcessor;
 import org.theseed.io.LineReader;
 import org.theseed.io.ParmDescriptor;
 import org.theseed.io.ParmFile;
@@ -50,7 +50,7 @@ public class BalanceInput extends MovableController {
     /** parameter file name */
     private File parmFile;
     /** current model processor */
-    private TrainingProcessor processor;
+    private ITrainingProcessor processor;
 
     // CONTROLS
 
@@ -97,7 +97,7 @@ public class BalanceInput extends MovableController {
      *
      * @throws IOException
      */
-    public void init(File modelDir, File parmFile, TrainingProcessor processor) throws IOException {
+    public void init(File modelDir, File parmFile, ITrainingProcessor processor) throws IOException {
         // Save the parameters and the model directory.
         this.modelDirectory = modelDir;
         this.parmFile = parmFile;
@@ -231,11 +231,15 @@ public class BalanceInput extends MovableController {
      * @throws IOException
      */
     public void updateParmFile(int dataCount) throws IOException {
-        // Update the testing set size and save the parameter file.
+        // Update the testing set size.
         ParmDescriptor testSizeParm = this.parms.get("testSize");
         int testSizeCount = dataCount / 10;
         if (testSizeCount < 1) testSizeCount = 1;
         testSizeParm.setValue(Integer.toString(testSizeCount));
+        // Update the sample size, if any.
+        ParmDescriptor numExamplesParm = this.parms.get("sampleSize");
+        if (numExamplesParm != null)
+            numExamplesParm.setValue(Integer.toString(testSizeCount * 2));
         // Now we add the ID column, if any.
         if (this.chkMakeIDs.isSelected()) {
             ParmDescriptor colParm = this.parms.get("meta");
@@ -253,6 +257,7 @@ public class BalanceInput extends MovableController {
             colParm.setCommented(false);
             colParm.setValue("id");
         }
+        // Save the parameter file.
         this.parms.save(this.parmFile);
     }
 

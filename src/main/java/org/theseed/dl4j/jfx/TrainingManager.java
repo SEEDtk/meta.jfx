@@ -14,8 +14,9 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.dl4j.train.CrossValidateProcessor;
 import org.theseed.dl4j.train.ITrainReporter;
+import org.theseed.dl4j.train.ITrainingProcessor;
+import org.theseed.dl4j.train.ModelType;
 import org.theseed.dl4j.train.SearchProcessor;
-import org.theseed.dl4j.train.TrainingProcessor;
 import org.theseed.io.LineReader;
 import org.theseed.jfx.BackgroundTask;
 import org.theseed.jfx.BaseController;
@@ -56,7 +57,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
     /** TRUE if a model file exists */
     private File modelFile;
     /** current model type */
-    private TrainingProcessor.Type modelType;
+    private ModelType modelType;
     /** current model's parameter file */
     private File parmFile;
     /** number of epochs displayed (owned by platform thread) */
@@ -311,7 +312,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         try {
             Stage resultStage = new Stage();
             // Get the training processor and set it up for predictions.
-            TrainingProcessor processor = TrainingProcessor.create(this.modelType);
+            ITrainingProcessor processor = ModelType.create(this.modelType);
             processor.setProgressMonitor(this);
             boolean ok = processor.initializeForPredictions(this.modelDirectory);
             if (ok) {
@@ -405,16 +406,21 @@ public class TrainingManager extends ResizableController implements ITrainReport
                     }
                     if (count == labels.size()) {
                         // Here we have a regression model.
-                        modelType = TrainingProcessor.Type.REGRESSION;
+                        modelType = ModelType.REGRESSION;
                     } else {
-                        modelType = TrainingProcessor.Type.CLASS;
+                        // Check for a marker file.
+                        File marker = new File(newDir, "decider.txt");
+                        if (marker.exists())
+                            modelType = ModelType.DECISION;
+                        else
+                            modelType = ModelType.CLASS;
                     }
                     configureType();
                     // Check for a parms.prm file.
                     parmFile = new File(this.modelDirectory, "parms.prm");
                     if (! parmFile.exists()) {
                         // Here we must create one.
-                        TrainingProcessor processor = TrainingProcessor.create(modelType);
+                        ITrainingProcessor processor = ModelType.create(modelType);
                         // Set the defaults.
                         processor.setAllDefaults();
                         // Count the training set.
@@ -423,16 +429,16 @@ public class TrainingManager extends ResizableController implements ITrainReport
                             reader.next();
                             size++;
                         }
-                        // Compute the testing set size.
-                        int testSize = size / 10;
-                        if (testSize < 1) testSize = 1;
-                        processor.setTestSize(testSize);
                         // Pull up the meta-column dialog.
                         List<String> availableHeaders = processor.computeAvailableHeaders(headers, labels);
                         String[] metaCols = this.findMetaColumns(availableHeaders);
                         processor.setMetaCols(metaCols);
                         if (metaCols.length > modelType.metaLabel())
                             processor.setIdCol(metaCols[0]);
+                        // Compute the size-related parms.
+                        int inputs = availableHeaders.size() - metaCols.length;
+                        processor.setSizeParms(size, inputs);
+                        // Write the parm file.
                         processor.writeParms(parmFile);
                     }
                     // If we made it here without any errors, we can enable the buttons.
@@ -639,7 +645,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         try {
             Stage convertStage = new Stage();
             BalanceInput balanceDialog = (BalanceInput) BaseController.loadFXML("BalanceInput", convertStage);
-            TrainingProcessor processor = TrainingProcessor.create(this.modelType);
+            ITrainingProcessor processor = ModelType.create(this.modelType);
             Parms parms = new Parms(this.parmFile);
             if (! processor.setupParameters(parms, this.modelDirectory))
                 throw new IOException("Invalid parameters in parameter file.");
