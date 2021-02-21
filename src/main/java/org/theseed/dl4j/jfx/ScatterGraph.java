@@ -5,10 +5,8 @@ package org.theseed.dl4j.jfx;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.theseed.counters.RatingList;
 import org.theseed.jfx.Prediction;
 import org.theseed.jfx.Stat;
 
@@ -41,7 +39,7 @@ public class ScatterGraph extends ValidationDisplayReport {
     /** testing series */
     private XYChart.Series<Double, Double> testingPoints;
     /** outlier list */
-    private SortedSet<Prediction> outliers;
+    private RatingList<Prediction> outliers;
     /** outlier table items */
     private ObservableList<Prediction> outlierItems;
     /** recommended maximum outliers */
@@ -96,7 +94,7 @@ public class ScatterGraph extends ValidationDisplayReport {
         this.trainingPoints.getData().clear();
         this.testingPoints.getData().clear();
         // Clear the outlier list.
-        this.outliers = new TreeSet<Prediction>();
+        this.outliers = new RatingList<Prediction>(MAX_OUTLIERS);
     }
 
     @Override
@@ -118,7 +116,7 @@ public class ScatterGraph extends ValidationDisplayReport {
         }
         // Fill in the outlier table.
         this.outlierItems.clear();
-        this.outlierItems.addAll(this.outliers);
+        this.outlierItems.addAll(this.outliers.getBest());
     }
 
     /**
@@ -131,10 +129,7 @@ public class ScatterGraph extends ValidationDisplayReport {
      */
     private void processOutlier(String id, double expect, double predict) {
         Prediction newPoint = new Prediction(id, expect, predict);
-        while (this.outliers.size() >= MAX_OUTLIERS && newPoint.errorValue() > this.outliers.last().errorValue())
-            this.outliers.remove(this.outliers.last());
-        if (this.outliers.size() < MAX_OUTLIERS || newPoint.errorValue() > this.outliers.last().errorValue())
-            this.outliers.add(newPoint);
+        this.outliers.add(newPoint, Math.abs(expect - predict));
     }
 
     @Override
