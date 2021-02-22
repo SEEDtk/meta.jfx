@@ -31,6 +31,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -163,6 +164,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
     @FXML
     private Button btnTrainingView;
 
+    /** number of folds for cross-validation */
+    @FXML
+    private ChoiceBox<String> kFoldChooser;
+
     /**
      * Initialize the local fields.
      */
@@ -208,6 +213,9 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.getMessage());
             }
         }
+        // Set the cross-validation fold number.
+        this.kFoldChooser.getItems().addAll("5", "8", "10");
+        this.kFoldChooser.setValue("10");
     }
 
     /**
@@ -347,6 +355,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 parmList.add("--id");
                 parmList.add(idCol);
             }
+            parmList.add("-k");
+            parmList.add(this.kFoldChooser.getValue());
             parmList.add(this.modelDirectory.toString());
             String[] parms = new String[parmList.size()];
             parms = parmList.toArray(parms);

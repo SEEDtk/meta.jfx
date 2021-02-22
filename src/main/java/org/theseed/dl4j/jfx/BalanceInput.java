@@ -271,7 +271,7 @@ public class BalanceInput extends MovableController {
         KERAS {
             @Override
             public String[] getLine(Iterator<String> inStream) throws IOException {
-                String[] retVal = StringUtils.stripAll(StringUtils.split(inStream.next(), ','), "\"");
+                String[] retVal = StringUtils.stripAll(StringUtils.splitPreserveAllTokens(inStream.next(), ','), "\"");
                 return retVal;
             }
 
@@ -279,7 +279,7 @@ public class BalanceInput extends MovableController {
             public String[] getHeaders(Iterator<String> inStream, File trainingFile) throws IOException {
                 String[] retVal = null;
                 try (LineReader hdrStream = new LineReader(trainingFile)) {
-                    retVal = StringUtils.split(hdrStream.next(), '\t');
+                    retVal = StringUtils.splitPreserveAllTokens(hdrStream.next(), '\t');
                 }
                 return retVal;
             }
@@ -292,12 +292,12 @@ public class BalanceInput extends MovableController {
         PATRIC {
             @Override
             public String[] getLine(Iterator<String> inStream) throws IOException {
-                return StringUtils.split(inStream.next(), '\t');
+                return StringUtils.splitPreserveAllTokens(inStream.next(), '\t');
             }
 
             @Override
             public String[] getHeaders(Iterator<String> inStream, File trainingFile) throws IOException {
-                return StringUtils.split(inStream.next(), '\t');
+                return StringUtils.splitPreserveAllTokens(inStream.next(), '\t');
             }
 
             @Override
