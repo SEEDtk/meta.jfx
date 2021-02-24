@@ -112,6 +112,7 @@ public class ParmDialog extends MovableController {
         builder.addText("seed");
         builder.addChoices("method", RandomForest.Method.values());
         builder.addText("testSize");
+        builder.addText("batchSize");
     }
 
     /**
