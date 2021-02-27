@@ -21,6 +21,8 @@ public abstract class ColumnAnalysis {
     // FIELDS
     /** data buffer containin the lines of data */
     private Collection<String[]> dataBuffer;
+    /** label column index */
+    private int labelIdx;
     /** default height and width for output element */
     protected static final double DEFAULT_SIZE = 300.0;
 
@@ -28,9 +30,11 @@ public abstract class ColumnAnalysis {
      * Construct a column analysis.
      *
      * @param data		collection of data lines
+     * @param labelIdx	label column index
      */
-    public ColumnAnalysis(Collection<String[]> data) {
+    public ColumnAnalysis(Collection<String[]> data, int labelIdx) {
         this.dataBuffer = data;
+        this.labelIdx = labelIdx;
     }
 
     /**
@@ -51,7 +55,7 @@ public abstract class ColumnAnalysis {
      *
      * @param column	iterator for the data to analyze
      */
-    protected abstract Node getAnalysis(Iterator<String> column);
+    protected abstract Node getAnalysis(Iter column);
 
     /**
      * @return the number of data lines
@@ -67,6 +71,8 @@ public abstract class ColumnAnalysis {
 
         /** iterator through the lines of data */
         private Iterator<String[]> iter;
+        /** current line of data */
+        private String[] curr;
         /** index of the column of interest */
         private int colIdx;
 
@@ -87,7 +93,12 @@ public abstract class ColumnAnalysis {
 
         @Override
         public String next() {
-            return this.iter.next()[this.colIdx];
+            this.curr = this.iter.next();
+            return this.curr[this.colIdx];
+        }
+
+        public String getLabel() {
+            return this.curr[ColumnAnalysis.this.labelIdx];
         }
 
     }

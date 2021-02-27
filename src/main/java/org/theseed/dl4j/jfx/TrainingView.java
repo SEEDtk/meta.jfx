@@ -5,11 +5,14 @@ package org.theseed.dl4j.jfx;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+
 import org.theseed.jfx.ColumnAnalysis;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.DistributionAnalysis;
 import org.theseed.jfx.ResizableController;
+import org.theseed.jfx.SpreadColumnAnalysis;
 import org.theseed.jfx.StatisticsAnalysis;
 
 import javafx.beans.property.SimpleStringProperty;
@@ -19,6 +22,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
@@ -66,6 +70,10 @@ public class TrainingView extends ResizableController {
     private ObservableList<String[]> lineBuffer;
     /** headers from the file */
     private String[] headers;
+    /** label column index (-1 if none) */
+    private int labelIdx;
+    /** list of label names */
+    private List<String> labelNames;
 
     // CONTROLS
 
@@ -84,6 +92,10 @@ public class TrainingView extends ResizableController {
     /** output panel for analysis graphs */
     @FXML
     private Pane paneResults;
+
+    /** button for displaying spread chart */
+    @FXML
+    private Button spreadButton;
 
     /**
      * Position and size this window.
@@ -104,8 +116,18 @@ public class TrainingView extends ResizableController {
 
     /**
      * Initialize this page.  All of the columns will be created in the table and the data lines read in.
+     *
+     * @param trainingFile		file name of the incoming training file
+     * @param labelIdx			index of the label column (-1 if none)
+     * @param labelNames
      */
-    public void init(File trainingFile) {
+    public void init(File trainingFile, int labelIdx, List<String> labelNames) {
+        // Save the label column index and the label names.
+        this.labelIdx = labelIdx;
+        this.labelNames = labelNames;
+        // Configure the spread button.
+        if (this.labelIdx < 0)
+            spreadButton.setVisible(false);
         // Save the file name for display.
         this.lblFileName.setText(trainingFile.getAbsolutePath());
         try (TabbedLineReader inStream = new TabbedLineReader(trainingFile)) {
@@ -136,18 +158,29 @@ public class TrainingView extends ResizableController {
      */
     @FXML
     public void analyzeColumns(ActionEvent event) {
-        ColumnAnalysis analyzer = new DistributionAnalysis(this.lineBuffer);
+        ColumnAnalysis analyzer = new DistributionAnalysis(this.lineBuffer, this.labelIdx);
         this.processColumns(analyzer);
     }
 
     /**
-     * Here the user wants mean and standard deviation statistcs on the selected columns.
+     * Here the user wants mean and standard deviation statistics on the selected columns.
      *
      * @param event		event descriptor
      */
     @FXML
     public void computeStatistics(ActionEvent event) {
-        ColumnAnalysis analyzer = new StatisticsAnalysis(this.lineBuffer);
+        ColumnAnalysis analyzer = new StatisticsAnalysis(this.lineBuffer, this.labelIdx);
+        this.processColumns(analyzer);
+    }
+
+    /**
+     * Here the user wants a display of the classification spread on the selected columns.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    public void displaySpread(ActionEvent event) {
+        ColumnAnalysis analyzer = new SpreadColumnAnalysis(this.lineBuffer, this.labelIdx, this.labelNames);
         this.processColumns(analyzer);
     }
 

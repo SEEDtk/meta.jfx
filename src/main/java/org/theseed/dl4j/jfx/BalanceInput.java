@@ -5,17 +5,22 @@ package org.theseed.dl4j.jfx;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
+
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.theseed.dl4j.BalanceColumnFilter;
 import org.theseed.dl4j.DistributedOutputStream;
+import org.theseed.dl4j.SubsetColumnFilter;
 import org.theseed.dl4j.train.ITrainingProcessor;
 import org.theseed.io.LineReader;
 import org.theseed.io.ParmDescriptor;
 import org.theseed.io.ParmFile;
+import org.theseed.io.TabbedLineReader;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.MovableController;
 
@@ -25,9 +30,13 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.util.converter.IntegerStringConverter;
+import javafx.beans.value.ObservableValue;
 
 /**
  * This controller manages the process of creating a training file from external data.  There must
@@ -51,6 +60,8 @@ public class BalanceInput extends MovableController {
     private File parmFile;
     /** current model processor */
     private ITrainingProcessor processor;
+    /** impact file rating set */
+    private List<String> impactList;
 
     // CONTROLS
 
@@ -73,6 +84,18 @@ public class BalanceInput extends MovableController {
     /** choice box for selecting label of interest */
     @FXML
     private ChoiceBox<String> cmbLabel;
+
+    /** label for column restrictor */
+    @FXML
+    private Label labelColumns;
+
+    /** text box for column restrictor */
+    @FXML
+    private TextField textColumns;
+
+    /** check box for enabling column restrictor */
+    @FXML
+    private CheckBox checkColumns;
 
     public BalanceInput() {
         super(200, 200);
@@ -112,6 +135,39 @@ public class BalanceInput extends MovableController {
         this.cmbLabel.getSelectionModel().select(0);
         // Find out if we should generate IDs.
         this.chkMakeIDs.setSelected(this.parms.get("id").isCommented());
+        // Check for an impact file.
+        File impactFile = new File(modelDir, "impact.tbl");
+        boolean canRestrict = impactFile.canRead();
+        this.checkColumns.setVisible(canRestrict);
+        this.labelColumns.setVisible(canRestrict);
+        this.textColumns.setVisible(canRestrict);
+        // Put in the text control validator.
+        if (canRestrict) {
+            // Set up the text control to default to a reduction by half, and for numbers only.
+            // First, we need to read the impact list.
+            int nonZero = 0;
+            this.impactList = new ArrayList<String>(100);
+            try (TabbedLineReader reader = new TabbedLineReader(impactFile)) {
+                int idCol = reader.findField("col_name");
+                int valCol = reader.findField("info_gain");
+                for (TabbedLineReader.Line line : reader) {
+                    this.impactList.add(line.get(idCol));
+                    double value = line.getDouble(valCol);
+                    if (value > 0.0) nonZero++;
+                }
+            }
+            int defaultValue = Math.min((this.impactList.size() + 1) / 2, nonZero);
+            TextFormatter<Integer> formatter = new TextFormatter<>(
+                    new IntegerStringConverter(), defaultValue,
+                    c -> Pattern.matches("\\d*", c.getText()) ? c : null );
+            this.textColumns.setTextFormatter(formatter);
+            // Disable the text control until the checkbox is checked.
+            this.textColumns.setDisable(true);
+            // Set up the checkbox to enable/disable depending on whether or not it is checked.
+            this.checkColumns.selectedProperty().addListener(
+                    (ObservableValue<? extends Boolean> ov, Boolean oldV, Boolean newV) ->
+                    { this.textColumns.setDisable(! newV); } );
+        }
         // Denote we are not ready to run.
         btnRun.setDisable(true);
     }
@@ -156,10 +212,17 @@ public class BalanceInput extends MovableController {
         try (LineReader inStream = new LineReader(this.inputFile)) {
             // Get the headers.
             String[] headers = type.getHeaders(inStream, trainingFile);
+            // Get the column filter.
+            BalanceColumnFilter filter;
+            if (checkColumns.isSelected())
+                filter = new SubsetColumnFilter(this.impactList, (int) this.textColumns.getTextFormatter().getValue(),
+                        this.processor.getMetaList(), this.processor.getLabelCols());
+            else
+                filter = new BalanceColumnFilter.All();
             // Make a safety copy of the training file.
             FileUtils.copyFile(trainingFile, backupFile);
             // Process the input to produce the output.
-            boolean ok = balanceInput(trainingFile, type, inStream, headers);
+            boolean ok = balanceInput(trainingFile, type, inStream, headers, filter);
             // End the dialog.
             if (ok) {
                 this.getStage().close();
@@ -188,28 +251,42 @@ public class BalanceInput extends MovableController {
      * @param type			type of input
      * @param inStream		input stream
      * @param headers		headers from the training file
+     * @param filter		column filter
      *
      * @return TRUE if successful, else FALSE
      */
     private boolean balanceInput(File trainingFile, InputFormat type, Iterator<String> inStream,
-            String[] headers) {
+            String[] headers, BalanceColumnFilter filter) {
         boolean retVal = false;
-        // Add the ID to the headers if we need it.
-        String[] actualHeaders = headers;
-        if (this.chkMakeIDs.isSelected())
-            actualHeaders = ArrayUtils.add(headers, "id");
+        // Here we must build the final header list.  We also need a map of input columns to output columns.
+        boolean idColFlag = this.chkMakeIDs.isSelected();
+        int[] columnMap = this.computeColumnMap(headers, filter, idColFlag);
+        // Compute the final column count.
+        int outColumns = columnMap.length;
+        // Create the actual header list.
+        String[] actualHeaders = new String[outColumns];
+        int iCol = 0;
+        if (idColFlag) actualHeaders[iCol++] = "id";
+        while (iCol < outColumns) {
+            actualHeaders[iCol] = headers[columnMap[iCol]];
+            iCol++;
+        }
+        // Initialize the counter used to generate IDs.
         int idCounter = 1;
         try {
             DistributedOutputStream outStream = DistributedOutputStream.create(trainingFile, this.processor, this.cmbLabel.getValue(), actualHeaders);
             while (inStream.hasNext()) {
                 String[] items = type.getLine(inStream);
+                String[] outItems = new String[outColumns];
                 // Only proceed if there is data in the line.  A lot of datasets out there have blanks in them.
                 if (items.length > 0) {
-                    if (this.chkMakeIDs.isSelected()) {
-                        String id = String.format("row-%04d", idCounter++);
-                        items = ArrayUtils.add(items, id);
+                    for (int i = 0; i < outColumns; i++) {
+                        if (columnMap[i] < 0)
+                            outItems[i] = String.format("row-%04d", idCounter++);
+                        else
+                            outItems[i] = items[columnMap[i]];
                     }
-                    outStream.write(items);
+                    outStream.write(outItems);
                 }
             }
             outStream.close();
@@ -221,6 +298,25 @@ public class BalanceInput extends MovableController {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Writing Output", e.getMessage());
         }
         return retVal;
+    }
+
+    /**
+     * This method creates a map showing what incoming column goes in each output column for the balanced
+     * dataset.  The special code -1 is used for the ID column.
+     *
+     * @param headers	incoming column headers
+     * @param filter	filter used to decide which columns to keep
+     *
+     * @return an array showing the input column index for each output column.
+     */
+    private int[] computeColumnMap(String[] headers, BalanceColumnFilter filter, boolean idColFlag) {
+        List<Integer> numberMap = new ArrayList<Integer>(headers.length);
+        if (idColFlag) numberMap.add(-1);
+        for (int i = 0; i < headers.length; i++) {
+            if (filter.allows(headers[i]))
+                numberMap.add(i);
+        }
+        return numberMap.stream().mapToInt(i -> i).toArray();
     }
 
     /**

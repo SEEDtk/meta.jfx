@@ -4,7 +4,6 @@
 package org.theseed.jfx;
 
 import java.util.Collection;
-import java.util.Iterator;
 import org.theseed.counters.CountMap;
 
 import javafx.collections.FXCollections;
@@ -23,14 +22,15 @@ public class DistributionAnalysis extends ColumnAnalysis {
     /**
      * Construct an object for creating the pie charts.
      *
-     * @param data	collection of data lines to analyze
+     * @param data		collection of data lines to analyze
+     * @param labelIdx	label column index
      */
-    public DistributionAnalysis(Collection<String[]> data) {
-        super(data);
+    public DistributionAnalysis(Collection<String[]> data, int labelIdx) {
+        super(data, labelIdx);
     }
 
     @Override
-    protected Node getAnalysis(Iterator<String> column) {
+    protected Node getAnalysis(Iter column) {
         CountMap<String> counts = new CountMap<String>();
         while (column.hasNext())
             counts.count(column.next());

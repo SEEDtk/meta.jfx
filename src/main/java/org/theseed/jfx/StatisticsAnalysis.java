@@ -4,8 +4,6 @@
 package org.theseed.jfx;
 
 import java.util.Collection;
-import java.util.Iterator;
-
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import javafx.collections.FXCollections;
@@ -23,14 +21,15 @@ public class StatisticsAnalysis extends ColumnAnalysis {
     /**
      * Create the statistical analyzer.
      *
-     * @param data	list of lines to analyze
+     * @param data		list of lines to analyze
+     * @param labelIdx	index of the label column
      */
-    public StatisticsAnalysis(Collection<String[]> data) {
-        super(data);
+    public StatisticsAnalysis(Collection<String[]> data, int labelIdx) {
+        super(data, labelIdx);
     }
 
     @Override
-    protected Node getAnalysis(Iterator<String> column) {
+    protected Node getAnalysis(Iter column) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         // Note we have to convert from string to double, and we ignore failures.
         while (column.hasNext()) try {

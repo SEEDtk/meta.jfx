@@ -12,6 +12,7 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.theseed.dl4j.LossFunctionType;
 import org.theseed.dl4j.Regularization;
 import org.theseed.dl4j.decision.RandomForest;
+import org.theseed.dl4j.decision.SplitPointFinder;
 import org.theseed.dl4j.jfx.parms.ParmDialogGroup;
 import org.theseed.dl4j.jfx.parms.ParmPaneBuilder;
 import org.theseed.dl4j.train.GradientUpdater;
@@ -126,6 +127,7 @@ public class ParmDialog extends MovableController {
         builder.addText("minSplit");
         builder.addText("maxDepth");
         builder.addText("sampleSize");
+        builder.addChoices("splitMethod", SplitPointFinder.Type.values());
     }
 
     /**

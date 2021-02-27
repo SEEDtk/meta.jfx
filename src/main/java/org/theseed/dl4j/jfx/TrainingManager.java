@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -65,6 +64,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
     private int numDisplayed;
     /** number of epochs queued (owned by background thread) */
     private int numSubmitted;
+    /** label column index for training file analysis */
+    private int labelIdx;
+    /** list of label names */
+    private List<String> labelNames;
     /** current background task */
     private BackgroundTask backgrounder;
     /** current progress bar background color */
@@ -215,7 +218,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
         }
         // Set the cross-validation fold number.
         this.kFoldChooser.getItems().addAll("5", "8", "10");
-        this.kFoldChooser.setValue("10");
+        String kFoldDefault = this.getPref("kFold", "10");
+        this.kFoldChooser.setValue(kFoldDefault);
     }
 
     /**
@@ -347,6 +351,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
     private void runXValidate(ActionEvent event) {
         ICommand processor = new CrossValidateProcessor(this);
         try {
+            // Save the k-fold value.
+            this.setPref("kFold", this.kFoldChooser.getValue());
             String idCol = this.getIdCol();
             List<String> parmList = new ArrayList<String>(10);
             parmList.add("-t");
@@ -405,16 +411,16 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 this.modelFile = new File(newDir, "model.ser");
                 txtModelDirectory.setText(newDir.getName());
                 this.setPref("modelDirectory", newDir.getAbsolutePath());
-                Set<String> labels = LineReader.readSet(labelFile);
+                this.labelNames = LineReader.readList(labelFile);
                 try (LineReader reader = new LineReader(trainFile)) {
                     String header = reader.next();
                     // If all of the labels are in this header line, it is a regression model.
                     List<String> headers = Arrays.asList(StringUtils.split(header, '\t'));
                     int count = 0;
                     for (String head : headers) {
-                        if (labels.contains(head)) count++;
+                        if (this.labelNames.contains(head)) count++;
                     }
-                    if (count == labels.size()) {
+                    if (count == this.labelNames.size()) {
                         // Here we have a regression model.
                         modelType = ModelType.REGRESSION;
                     } else {
@@ -426,13 +432,13 @@ public class TrainingManager extends ResizableController implements ITrainReport
                             modelType = ModelType.CLASS;
                     }
                     configureType();
+                    // Create a processor.
+                    ITrainingProcessor processor = ModelType.create(modelType);
+                    // Set the defaults.
+                    processor.setAllDefaults();
                     // Check for a parms.prm file.
                     parmFile = new File(this.modelDirectory, "parms.prm");
                     if (! parmFile.exists()) {
-                        // Here we must create one.
-                        ITrainingProcessor processor = ModelType.create(modelType);
-                        // Set the defaults.
-                        processor.setAllDefaults();
                         // Count the training set.
                         int size = 0;
                         while (reader.hasNext()) {
@@ -440,7 +446,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                             size++;
                         }
                         // Pull up the meta-column dialog.
-                        List<String> availableHeaders = processor.computeAvailableHeaders(headers, labels);
+                        List<String> availableHeaders = processor.computeAvailableHeaders(headers, this.labelNames);
                         String[] metaCols = this.findMetaColumns(availableHeaders);
                         processor.setMetaCols(metaCols);
                         if (metaCols.length > modelType.metaLabel())
@@ -451,6 +457,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
                         // Write the parm file.
                         processor.writeParms(parmFile);
                     }
+                    // Compute the label column index.
+                    this.labelIdx = processor.getLabelIndex(this.modelDirectory);
                     // If we made it here without any errors, we can enable the buttons.
                     this.setState(true);
                     retVal = true;
@@ -679,7 +687,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
             Stage viewStage = new Stage();
             File trainFile = new File(this.modelDirectory, "training.tbl");
             TrainingView viewDialog = (TrainingView) BaseController.loadFXML("TrainingView", viewStage);
-            viewDialog.init(trainFile);
+            viewDialog.init(trainFile, this.labelIdx, this.labelNames);
             viewStage.show();
         } catch (IOException e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Training File Viewer", e.getMessage());
