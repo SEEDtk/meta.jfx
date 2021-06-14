@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.GridPane?>
 
-<GridPane hgap="5.0" prefHeight="750.0" prefWidth="1000.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.theseed.dl4j.jfx.TrainingView">
+<GridPane hgap="5.0" prefHeight="750.0" prefWidth="1000.0" stylesheets="@mods.css" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.theseed.dl4j.jfx.TrainingView">
    <columnConstraints>
       <ColumnConstraints />
       <ColumnConstraints />

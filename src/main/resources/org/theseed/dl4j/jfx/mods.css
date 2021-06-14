@@ -26,3 +26,21 @@
     -fx-background-radius: 3px;
     -fx-padding: 3px;
 }
+
+.default-color0.chart-bar { -fx-bar-fill: #44f; }
+.default-color1.chart-bar { -fx-bar-fill: #c00; }
+.default-color2.chart-bar { -fx-bar-fill: #0c0; }
+.default-color3.chart-pie { -fx-bar-fill: #f90; }
+.default-color4.chart-pie { -fx-bar-fill: #880; }
+.default-color5.chart-pie { -fx-bar-fill: #906; }
+.default-color6.chart-pie { -fx-bar-fill: #ccc; }
+.default-color7.chart-pie { -fx-bar-fill: #f66; }
+
+.default-color0.chart-pie { -fx-pie-color: #44f; }
+.default-color1.chart-pie { -fx-pie-color: #c00; }
+.default-color2.chart-pie { -fx-pie-color: #0c0; }
+.default-color3.chart-pie { -fx-pie-color: #f90; }
+.default-color4.chart-pie { -fx-pie-color: #880; }
+.default-color5.chart-pie { -fx-pie-color: #906; }
+.default-color6.chart-pie { -fx-pie-color: #ccc; }
+.default-color7.chart-pie { -fx-pie-color: #f66; }
