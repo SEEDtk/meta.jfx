@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.theseed.dl4j.train.RunStats;
+import org.theseed.dl4j.train.RunLog;
 import org.theseed.io.LineReader;
 import org.theseed.jfx.ResizableController;
 
@@ -145,7 +145,7 @@ public class LogViewer extends ResizableController {
         try (LineReader reader = new LineReader(logFile)) {
             Iterator<String> lineIter = reader.iterator();
             // Find the first job.
-            while (lineIter.hasNext() && ! lineIter.next().contentEquals(RunStats.JOB_START_MARKER));
+            while (lineIter.hasNext() && ! lineIter.next().contentEquals(RunLog.JOB_START_MARKER));
             // We are now positioned at the end of file or immediately after a job-start marker.
             while (lineIter.hasNext()) {
                 // Consume this job.
@@ -208,11 +208,11 @@ public class LogViewer extends ResizableController {
             // Get the next line.
             line = lineIter.next();
             switch (line) {
-            case RunStats.JOB_START_MARKER :
+            case RunLog.JOB_START_MARKER :
                 // Here we are at the end of the job.
                 endOfJob = true;
                 break;
-            case RunStats.TRIAL_SECTION_MARKER :
+            case RunLog.TRIAL_SECTION_MARKER :
                 // Here we are at the start of a new section.
                 if (section != null) {
                     this.storeSection(jobItem, section);
