@@ -7,9 +7,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -97,6 +99,10 @@ public class BalanceInput extends MovableController {
     @FXML
     private CheckBox checkColumns;
 
+    /** combo box for selecting scramble column */
+    @FXML
+    private ChoiceBox<String> cmbScramble;
+
     public BalanceInput() {
         super(200, 200);
     }
@@ -133,6 +139,11 @@ public class BalanceInput extends MovableController {
         List<String> labelCols = processor.getLabelCols();
         this.cmbLabel.getItems().addAll(labelCols);
         this.cmbLabel.getSelectionModel().select(0);
+        // Set up the scrambler combo box.  We need to read the headers from training.tbl.
+        List<String> allCols = this.getAllCols();
+        allCols.add(0, "(none)");
+        this.cmbScramble.getItems().addAll(allCols);
+        this.cmbScramble.getSelectionModel().select(0);
         // Find out if we should generate IDs.
         this.chkMakeIDs.setSelected(this.parms.get("id").isCommented());
         // Check for an impact file.
@@ -170,6 +181,23 @@ public class BalanceInput extends MovableController {
         }
         // Denote we are not ready to run.
         btnRun.setDisable(true);
+    }
+
+    /**
+     * @return a list of all the column headers in the current training file
+     *
+     * @throws IOException
+     */
+    private List<String> getAllCols() throws IOException {
+        List<String> retVal;
+        File trainingFile = new File(this.modelDirectory, "training.tbl");
+        try (TabbedLineReader trainingStream = new TabbedLineReader(trainingFile)) {
+            // We need a buffer variable that can be declared final for the lambda expression below.
+            final List<String> buffer = new ArrayList<String>(trainingStream.size());
+            Arrays.stream(trainingStream.getLabels()).forEach(x -> buffer.add(x));
+            retVal = buffer;
+        }
+        return retVal;
     }
 
     /**
@@ -222,7 +250,7 @@ public class BalanceInput extends MovableController {
             // Make a safety copy of the training file.
             FileUtils.copyFile(trainingFile, backupFile);
             // Process the input to produce the output.
-            boolean ok = balanceInput(trainingFile, type, inStream, headers, filter);
+            boolean ok = this.balanceInput(trainingFile, type, inStream, headers, filter);
             // End the dialog.
             if (ok) {
                 this.getStage().close();
@@ -273,8 +301,9 @@ public class BalanceInput extends MovableController {
         }
         // Initialize the counter used to generate IDs.
         int idCounter = 1;
-        try {
-            DistributedOutputStream outStream = DistributedOutputStream.create(trainingFile, this.processor, this.cmbLabel.getValue(), actualHeaders);
+        try (DistributedOutputStream outStream = DistributedOutputStream.create(trainingFile, this.processor, this.cmbLabel.getValue(), actualHeaders)) {
+            // Initially, we stash all the output lines in here.
+            List<String[]> lines = new ArrayList<String[]>(1000);
             while (inStream.hasNext()) {
                 String[] items = type.getLine(inStream);
                 String[] outItems = new String[outColumns];
@@ -286,18 +315,44 @@ public class BalanceInput extends MovableController {
                         else
                             outItems[i] = items[columnMap[i]];
                     }
-                    outStream.write(outItems);
+                    lines.add(outItems);
                 }
             }
-            outStream.close();
+            // If we are scrambling, Do it here.
+            String scrambleCol = this.cmbScramble.getValue();
+            int iScramble = -1;
+            for (int i = 0; i < actualHeaders.length && iScramble < 0; i++) {
+                if (actualHeaders[i].contentEquals(scrambleCol))
+                    iScramble = i;
+            }
+            if (iScramble >= 0)
+                this.scrambleColumn(lines, iScramble);
+            // Now we write the output.
+            for (String[] outItems : lines)
+                outStream.write(outItems);
             // Make the necessary updates to the parm file.
-            this.updateParmFile(outStream.getOutputCount());
+            this.updateParmFile(lines.size());
             // Denote we've succeeded.
             retVal = true;
         } catch (IOException e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Writing Output", e.getMessage());
         }
         return retVal;
+    }
+
+    /**
+     * Scramble the order of the items in the specified column.
+     *
+     * @param lines			list of output lines, each represented as an array of values
+     * @param iScramble		index of the column to scramble
+     */
+    private void scrambleColumn(List<String[]> lines, int iScramble) {
+        // Get the scrambling column into a list and shuffle it.
+        List<String> column = lines.stream().map(x -> x[iScramble]).collect(Collectors.toList());
+        Collections.shuffle(column);
+        // Store the scrambled results back over the top of the scramble column in the input list.
+        for (int i = 0; i < lines.size(); i++)
+            lines.get(i)[iScramble] = column.get(i);
     }
 
     /**
