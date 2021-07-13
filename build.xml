@@ -126,13 +126,10 @@
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/ch/qos/logback/logback-classic/1.2.3/logback-classic-1.2.3.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/ch/qos/logback/logback-core/1.2.3/logback-core-1.2.3.jar"/>
             <fileset dir="${dir.workspace}/git/shared/target/classes"/>
-            <fileset dir="${dir.workspace}/git/shared/target/test-classes"/>
             <fileset dir="${dir.workspace}/git/dl4j.decision/target/classes"/>
-            <fileset dir="${dir.workspace}/git/dl4j.decision/target/test-classes"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/com/google/guava/guava/19.0/guava-19.0.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/slf4j/slf4j-api/1.7.25/slf4j-api-1.7.25.jar"/>
             <fileset dir="${dir.workspace}/git/p3api/target/classes"/>
-            <fileset dir="${dir.workspace}/git/p3api/target/test-classes"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/apache/httpcomponents/httpclient/4.5.13/httpclient-4.5.13.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/apache/httpcomponents/httpcore/4.4.13/httpcore-4.4.13.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/commons-logging/commons-logging/1.2/commons-logging-1.2.jar"/>

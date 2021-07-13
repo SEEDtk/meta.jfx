@@ -3,6 +3,9 @@
 	<name>dl4j.jfx</name>
 	<comment></comment>
 	<projects>
+		<project>dl4j.decision</project>
+		<project>dl4j.run</project>
+		<project>shared</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

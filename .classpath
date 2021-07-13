@@ -27,9 +27,14 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/dl4j.run">
 		<attributes>
 			<attribute name="module" value="true"/>
+			<attribute name="without_test_code" value="true"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/dl4j.decision"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/dl4j.decision">
+		<attributes>
+			<attribute name="without_test_code" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
