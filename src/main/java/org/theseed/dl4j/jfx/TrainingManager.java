@@ -217,7 +217,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
             }
         }
         // Set the cross-validation fold number.
-        this.kFoldChooser.getItems().addAll("5", "8", "10");
+        this.kFoldChooser.getItems().addAll("5", "9", "10", "13");
         String kFoldDefault = this.getPref("kFold", "10");
         this.kFoldChooser.setValue(kFoldDefault);
     }
