@@ -191,8 +191,8 @@ public class ResultDisplay extends ResizableController {
         try {
             // Display the predictions.
             processor.runPredictions(this.displayController, this.trainingFile);
-        } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "PredictionError", e.getMessage());
+        } catch (Exception e) {
+            BaseController.messageBox(Alert.AlertType.ERROR, "PredictionError", e.toString());
         }
     }
 
