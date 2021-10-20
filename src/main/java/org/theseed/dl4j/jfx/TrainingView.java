@@ -147,7 +147,7 @@ public class TrainingView extends ResizableController {
             this.lstColumns.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
             this.lstColumns.setItems(FXCollections.observableArrayList(this.headers));
         }  catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Readining Training File", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Readining Training File", e.toString());
         }
     }
 

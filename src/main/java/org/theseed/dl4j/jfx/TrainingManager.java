@@ -213,7 +213,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                     this.modelDirectory = null;
             } catch (IOException e) {
                 this.setState(false);
-                BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.getMessage());
+                BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Model Directory", e.toString());
             }
         }
         // Set the cross-validation fold number.
@@ -255,7 +255,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                                 curDir + " does not have a training.tbl and a labels.txt.");
                     }
                 } catch (IOException e) {
-                    BaseController.messageBox(Alert.AlertType.ERROR, "Error Changing Model Directory", e.getMessage());
+                    BaseController.messageBox(Alert.AlertType.ERROR, "Error Changing Model Directory", e.toString());
                 }
             }
         }
@@ -292,7 +292,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 executeCommand(processor, "SEARCH", parms);
             }
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Parameter Dialog", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Parameter Dialog", e.toString());
         }
     }
 
@@ -310,7 +310,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
             logViewer.init(logFile, this.txtModelDirectory.getText());
             logStage.show();
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Log Viewer", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Log Viewer", e.toString());
         }
     }
 
@@ -338,7 +338,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 BaseController.messageBox(Alert.AlertType.ERROR, "Invalid Parameter File", "Parameter file not set up for evaluation.");
             }
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Result Display", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Result Display", e.toString());
         }
     }
 
@@ -368,7 +368,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
             parms = parmList.toArray(parms);
             this.executeCommand(processor, "Cross-Validate", parms);
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Parm File", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Parm File", e.toString());
         }
     }
 
@@ -672,7 +672,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 convertStage.showAndWait();
             }
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Data Converter", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Data Converter", e.toString());
         }
     }
 
@@ -690,7 +690,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
             viewDialog.init(trainFile, this.labelIdx, this.labelNames);
             viewStage.show();
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Training File Viewer", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Training File Viewer", e.toString());
         }
     }
 

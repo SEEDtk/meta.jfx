@@ -85,7 +85,7 @@ public class ParmDialog extends MovableController {
         try {
             this.parms = new ParmFile(parmFile);
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Parm File", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Reading Parm File", e.toString());
         }
         // Now we need to build the parameter dialog groups.  First the model structure parameters.
         ParmPaneBuilder builder = new ParmPaneBuilder(this.structurePane, this.parms);
@@ -240,7 +240,7 @@ public class ParmDialog extends MovableController {
             this.parms.save(this.parmFile);
             retVal = true;
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Saving Parm File", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Saving Parm File", e.toString());
         }
         return retVal;
     }

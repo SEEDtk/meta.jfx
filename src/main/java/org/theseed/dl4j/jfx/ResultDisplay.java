@@ -208,7 +208,7 @@ public class ResultDisplay extends ResizableController {
                 IValidationReport output = processor.getValidationReporter(outStream);
                 processor.runPredictions(output, this.trainingFile);
             } catch (IOException e) {
-                BaseController.messageBox(Alert.AlertType.ERROR, "PredictionError", e.getMessage());
+                BaseController.messageBox(Alert.AlertType.ERROR, "PredictionError", e.toString());
             }
         }
     }

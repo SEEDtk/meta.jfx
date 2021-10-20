@@ -4,7 +4,10 @@
 package org.theseed.dl4j.jfx;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,6 +29,7 @@ import org.theseed.io.TabbedLineReader;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.MovableController;
 
+import dl4j.utils.ConversionStream;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -42,9 +46,12 @@ import javafx.beans.value.ObservableValue;
 
 /**
  * This controller manages the process of creating a training file from external data.  There must
- * already be a training.tbl file in the model directory, but it can contain just headers.  The
- * old file will be destroyed.  For a classification model, the data will be balanced.  For
- * a regression model, the data will be scrambled.
+ * already be a training.tbl file in the model directory, but it can contain just headers.  Normally, the
+ * old file will be backed up and destroyed; however, an option is provided to specify an alternate location
+ * for the result.
+ * 
+ * For a classification model, the data will be balanced.  For a regression model, the data will be scrambled.  
+ * If the input file is in a different format, it will be converted.
  *
  * @author Bruce Parrello
  *
@@ -56,6 +63,8 @@ public class BalanceInput extends MovableController {
     private File modelDirectory;
     /** input file */
     private File inputFile;
+    /** output file */
+    private File outputFile;
     /** parameter file controller */
     private ParmFile parms;
     /** parameter file name */
@@ -74,6 +83,10 @@ public class BalanceInput extends MovableController {
     /** text field for displaying input file name */
     @FXML
     private TextField txtInputFile;
+
+    /** text field for displaying output file name */
+    @FXML
+    private TextField txtOutputFile;
 
     /** button to start the process */
     @FXML
@@ -94,6 +107,10 @@ public class BalanceInput extends MovableController {
     /** text box for column restrictor */
     @FXML
     private TextField textColumns;
+    
+    /** text box for missing-column default value */
+    @FXML
+    private TextField txtDefaultValue;
 
     /** check box for enabling column restrictor */
     @FXML
@@ -146,6 +163,11 @@ public class BalanceInput extends MovableController {
         this.cmbScramble.getSelectionModel().select(0);
         // Find out if we should generate IDs.
         this.chkMakeIDs.setSelected(this.parms.get("id").isCommented());
+        // Specify a default value for missing columns.
+        this.txtDefaultValue.setText("0.0");
+        // Set up the output file.
+        this.outputFile = new File(this.modelDirectory, "training.tbl");
+        this.txtOutputFile.setText(this.outputFile.getName());
         // Check for an impact file.
         File impactFile = new File(modelDir, "impact.tbl");
         boolean canRestrict = impactFile.canRead();
@@ -214,14 +236,34 @@ public class BalanceInput extends MovableController {
         chooser.getExtensionFilters().addAll(specialFilter,
                 new ExtensionFilter("All Files", "*.*"));
         // Get the file.
-        this.inputFile = chooser.showOpenDialog(this.getStage());
-        if (inputFile != null) {
-            btnRun.setDisable(false);
+        File retVal = chooser.showOpenDialog(this.getStage());
+        if (retVal != null) {
+        	this.inputFile = retVal;
             txtInputFile.setText(this.inputFile.getName());
             btnRun.setDisable(false);
         }
     }
 
+    /**
+     * Select the output file.
+     * 
+     * @param event		event descriptor
+     */
+    public void selectOutput(ActionEvent event) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select Output File");
+        chooser.setInitialDirectory(this.outputFile.getParentFile());
+        // We add a special filter for the preferred extension of the selected format.
+        chooser.getExtensionFilters().addAll(new ExtensionFilter("Training Files", "*.tbl"),
+                new ExtensionFilter("All Files", "*.*"));
+        // Get the file.
+        File retVal = chooser.showSaveDialog(this.getStage());
+        if (retVal != null) {
+        	this.outputFile = retVal;
+            txtOutputFile.setText(retVal.getName());
+        }
+    }
+    
     /**
      * Create the balanced input file.  This randomizes the data in such a way that different
      * output values are evenly distributed.
@@ -229,17 +271,18 @@ public class BalanceInput extends MovableController {
      * @param event		event descriptor
      */
     public void runBalancer(ActionEvent event) {
-        // Compute the output file name and the backup file name.
-        File trainingFile = new File(this.modelDirectory, "training.tbl");
-        File backupFile = new File(this.modelDirectory, "training.old.tbl");
+        // Compute the backup file name.
+        File backupFile = new File(this.modelDirectory, this.outputFile.getName() + ".bak");
         // Get the input type.
         InputFormat type = this.cmbFormat.getValue();
         // We use this to determine if we need to restore from backup.
         boolean restoreNeeded = false;
-        // Open the input file.
-        try (LineReader inStream = new LineReader(this.inputFile)) {
+        // Compute the stream to use for the input.
+        File trainingFile = new File(this.modelDirectory, "training.tbl");
+        try (InputStream sourceStream = type.getInStream(this.inputFile, trainingFile, txtDefaultValue.getText());
+        		LineReader inStream = new LineReader(sourceStream)) {
             // Get the headers.
-            String[] headers = type.getHeaders(inStream, trainingFile);
+            String[] headers = type.getHeaders(inStream, this.outputFile);
             // Get the column filter.
             BalanceColumnFilter filter;
             if (checkColumns.isSelected())
@@ -248,26 +291,29 @@ public class BalanceInput extends MovableController {
             else
                 filter = new BalanceColumnFilter.All();
             // Make a safety copy of the training file.
-            FileUtils.copyFile(trainingFile, backupFile);
+            if (this.outputFile.exists()) {
+            	FileUtils.copyFile(this.outputFile, backupFile);
+            	restoreNeeded = true;
+            }
             // Process the input to produce the output.
-            boolean ok = this.balanceInput(trainingFile, type, inStream, headers, filter);
+            boolean ok = this.balanceInput(this.outputFile, type, inStream, headers, filter);
             // End the dialog.
             if (ok) {
                 this.getStage().close();
                 restoreNeeded = false;
-                BaseController.messageBox(Alert.AlertType.INFORMATION, "Input Conversion", trainingFile.getPath() + " has been updated.");
+                BaseController.messageBox(Alert.AlertType.INFORMATION, "Input Conversion", this.outputFile.getPath() + " has been updated.");
             }
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Converting Input", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Converting Input", e.toString());
         }
         if (restoreNeeded) {
             // Here we must restore the training.tbl file from backup.
             try {
-                FileUtils.copyFile(backupFile, trainingFile);
+                FileUtils.copyFile(backupFile, this.outputFile);
             } catch (IOException e) {
                 // Here we couldn't restore the backup, which is really bad.
-                BaseController.messageBox(Alert.AlertType.ERROR, "Error Restoring Training File",
-                        e.getMessage());
+                BaseController.messageBox(Alert.AlertType.ERROR, "Error Restoring Output File",
+                        e.toString());
             }
         }
     }
@@ -335,7 +381,7 @@ public class BalanceInput extends MovableController {
             // Denote we've succeeded.
             retVal = true;
         } catch (IOException e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Writing Output", e.getMessage());
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Writing Output", e.toString());
         }
         return retVal;
     }
@@ -439,6 +485,35 @@ public class BalanceInput extends MovableController {
             protected ExtensionFilter getFilter() {
                 return new ExtensionFilter("Comma-separated file", "*.csv", "*.data");
             }
+
+			@Override
+			public InputStream getInStream(File sourceFile, File trainingFile, String defaultV)
+					throws FileNotFoundException {
+				return new FileInputStream(sourceFile);
+			}
+        },
+        SIMILAR {
+			@Override
+			public String[] getLine(Iterator<String> inStream) throws IOException {
+                return StringUtils.splitPreserveAllTokens(inStream.next(), '\t');
+			}
+
+			@Override
+			protected ExtensionFilter getFilter() {
+				return new ExtensionFilter("Training file", "*.tbl");
+			}
+
+			@Override
+			public String[] getHeaders(Iterator<String> inStream, File trainingFile) throws IOException {
+                return StringUtils.splitPreserveAllTokens(inStream.next(), '\t');
+			}
+
+			@Override
+			public InputStream getInStream(File sourceFile, File trainingFile, String defaultV) 
+					throws IOException {
+				return new ConversionStream(sourceFile, trainingFile, defaultV);
+			}
+        	
         },
         PATRIC {
             @Override
@@ -455,6 +530,12 @@ public class BalanceInput extends MovableController {
             protected ExtensionFilter getFilter() {
                 return new ExtensionFilter("Tab-delimited file", "*.tbl", "*.txt", "*.tsv");
             }
+
+			@Override
+			public InputStream getInStream(File sourceFile, File trainingFile, String defaultV) 
+					throws IOException {
+				return new FileInputStream(sourceFile);
+			}
         };
 
         /**
@@ -476,6 +557,18 @@ public class BalanceInput extends MovableController {
          * @param trainingFile	original training file, used for headers in KERAS mode
          */
         public abstract String[] getHeaders(Iterator<String> inStream, File trainingFile) throws IOException;
+        
+        /**
+         * @return the input stream for this operation
+         * 
+         * @param sourceFile	source file name
+         * @param trainingFile	target training file name
+         * @param defaultV		default value for missing columns
+         * 
+         * @throws IOException
+         */
+        public abstract InputStream getInStream(File sourceFile, File trainingFile, String defaultV)
+        		throws IOException;
     }
 
 
