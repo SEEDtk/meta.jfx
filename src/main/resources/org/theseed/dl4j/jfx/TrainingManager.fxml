@@ -68,10 +68,11 @@
       <Button fx:id="btnCrossValidate" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#runXValidate" text="Cross-Validate" GridPane.columnIndex="5" GridPane.rowIndex="1" />
       <TilePane alignment="CENTER" hgap="10.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2">
          <children>
-            <Button fx:id="btnViewLog" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewLog" prefWidth="125.0" text="View Log" />
-            <Button fx:id="btnViewResults" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showModelResults" prefWidth="125.0" text="View Results" />
-            <Button fx:id="btnConvert" mnemonicParsing="false" onAction="#convertInput" prefWidth="125.0" text="Convert Data" />
-            <Button fx:id="btnTrainingView" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewTrainingFile" prefWidth="125.0" text="Show Training File" />
+            <Button fx:id="btnViewLog" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewLog" prefWidth="120.0" text="View Log" />
+            <Button fx:id="btnViewResults" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showModelResults" prefWidth="120.0" text="View Results" />
+            <Button fx:id="btnConvert" mnemonicParsing="false" onAction="#convertInput" prefWidth="120.0" text="Convert Data" />
+            <Button fx:id="btnTrainingView" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewTrainingFile" prefWidth="120.0" text="Show Training File" />
+            <Button fx:id="btnMeanBias" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showMeanBias" prefWidth="120.0" text="Mean Bias" />
          </children>
       </TilePane>
       <Button fx:id="btnAbortCommand" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#abortCommand" text="Abort Command" textFill="RED" GridPane.columnIndex="3" GridPane.rowIndex="2" />

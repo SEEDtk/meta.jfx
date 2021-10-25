@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"  fx:controller="org.theseed.dl4j.jfx.MeanBiasDialog">
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+   <rowConstraints>
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+   </rowConstraints>
+   <columnConstraints>
+      <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
+      <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
+      <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
+   </columnConstraints>
+   <children>
+      <Label text="Training File" />
+      <TextField fx:id="txtInputFile" editable="false" prefWidth="200.0" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" />
+      <Button mnemonicParsing="false" onAction="#selectInput" text="..." GridPane.columnIndex="2" />
+      <Label text="Output File" GridPane.rowIndex="1" />
+      <TextField fx:id="txtOutputFile" editable="false" prefWidth="200.0" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <Button mnemonicParsing="false" onAction="#selectOutput" text="..." GridPane.columnIndex="2" GridPane.rowIndex="1"  />
+      <Button fx:id="btnRun" alignment="CENTER" onAction="#runBias" defaultButton="true" mnemonicParsing="false" text="Create Bias File" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+   </children>
+</GridPane>

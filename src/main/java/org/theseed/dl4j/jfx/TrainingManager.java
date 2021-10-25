@@ -139,6 +139,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
     @FXML
     private Button btnViewResults;
 
+    /** button to compute mean bias */
+    @FXML
+    private Button btnMeanBias;
+
     /** abort button */
     @FXML
     private Button btnAbortCommand;
@@ -341,7 +345,23 @@ public class TrainingManager extends ResizableController implements ITrainReport
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Result Display", e.toString());
         }
     }
-
+    
+    /**
+     * Button event to compute mean bias.
+     * 
+     * @param event		event descriptor
+     */
+    @FXML
+    private void showMeanBias(ActionEvent event) {
+    	try {
+            Stage biasStage = new Stage();
+            MeanBiasDialog biasDialog = (MeanBiasDialog) BaseController.loadFXML("MeanBiasDialog", biasStage);
+            biasDialog.init(this.modelDirectory);
+            biasStage.showAndWait();
+    	} catch (Exception e) {
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Computing Mean Bias", e.toString());
+        }
+    }
     /**
      * Button event to invoke cross-validation.
      *
@@ -492,6 +512,8 @@ public class TrainingManager extends ResizableController implements ITrainReport
         this.lblModelType.setText(this.modelType.getDescription());
         String caption = this.modelType.resultDescription();
         this.btnViewResults.setText(caption);
+        int hasClassLabel = this.modelType.metaLabel();
+        this.btnMeanBias.setVisible(hasClassLabel > 0);
     }
 
     /**
