@@ -143,6 +143,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
     @FXML
     private Button btnMeanBias;
 
+    /** button to make predictions */
+    @FXML
+    private Button btnPredict;
+
     /** abort button */
     @FXML
     private Button btnAbortCommand;
@@ -362,6 +366,23 @@ public class TrainingManager extends ResizableController implements ITrainReport
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Computing Mean Bias", e.toString());
         }
     }
+    
+    /**
+     * Button event to make predictions.
+     * 
+     * @param event		event descriptor
+     */
+    @FXML
+    private void showPredict(ActionEvent event) {
+    	try {
+    		Stage predictStage = new Stage();
+    		PredictDialog predictDialog = (PredictDialog) BaseController.loadFXML("PredictDialog", predictStage);
+    		predictDialog.init(this.modelDirectory, this.modelType);
+    		predictStage.showAndWait();
+    	} catch (Exception e) {
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Making Predictions", e.toString());
+    	}
+    }
     /**
      * Button event to invoke cross-validation.
      *
@@ -529,6 +550,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         this.btnCrossValidate.setDisable(! b);
         this.btnConvert.setDisable(! b);
         this.btnTrainingView.setDisable(! b);
+        this.btnPredict.setDisable(! b);
         if (! b)
             this.lblModelType.setText("");
     }

@@ -39,7 +39,7 @@ public class MeanBiasDialog extends MovableController {
 	/** output file */
 	private File biasFile;
 	/** extension filter */
-	private static ExtensionFilter TEXT_FILES = new ExtensionFilter("Tab-delimited file", "*.tbl", "*.txt", "*.tsv");
+	public static ExtensionFilter TEXT_FILES = new ExtensionFilter("Tab-delimited file", "*.tbl", "*.txt", "*.tsv");
 	
 	// CONTROLS
 
