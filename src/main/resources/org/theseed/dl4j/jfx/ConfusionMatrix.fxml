@@ -26,6 +26,8 @@
                       <TableColumn fx:id="testLabels" prefWidth="75.0" text="prediction" />
                     </columns>
                   </TableView>
+                  <Label prefWidth="200.0" prefHeight="200.0" wrapText="true"
+                  text="In the bar graph, the bar color indicates the predicted value and the bar position the actual value.  In the table, the column indicates the predicted value and the row the actual value."/> 
                </children>
             </VBox>
             <StackedBarChart fx:id="trainBars" prefHeight="350.0" prefWidth="250.0" title="Training Set">
