@@ -21,6 +21,7 @@ import org.theseed.jfx.BackgroundTask;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.IBackgroundController;
 import org.theseed.jfx.ResizableController;
+import org.theseed.join.JoinDialog;
 import org.theseed.utils.ICommand;
 import org.theseed.utils.Parms;
 
@@ -392,14 +393,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
     @FXML
     private void showJoinDialog(ActionEvent event) {
         try {
-            // Get the primary input file.
-            File inFile = JoinSpec.chooseFile(this.modelDirectory, this.getStage());
-            if (inFile != null) {
-                Stage joinStage = new Stage();
-                JoinDialog joinDialog = (JoinDialog) BaseController.loadFXML("JoinDialog", joinStage);
-                joinDialog.init(inFile);
-                joinStage.showAndWait();
-            }
+            Stage joinStage = new Stage();
+            JoinDialog joinDialog = (JoinDialog) BaseController.loadFXML("/org/theseed/join/JoinDialog", joinStage);
+            joinDialog.init(this.modelDirectory);
+            joinStage.showAndWait();
         } catch (Exception e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Joining Files", e.toString());
         }

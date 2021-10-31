@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.GridPane?>
 
-<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.theseed.dl4j.jfx.JoinDialog">
+<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.theseed.join.JoinDialog">
    <rowConstraints>
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="500.0" />
@@ -33,7 +33,7 @@
       <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="3">
          <children>
             <Button mnemonicParsing="false" onAction="#addFileSpec" text="Add File" GridPane.columnIndex="3" />
-            <CheckBox fx:id="chkLeftJoin" mnemonicParsing="false" text="Use Left Join" />
+            <ChoiceBox fx:id="cmbJoinType" prefWidth="150.0" />
          </children>
       </HBox>
       <Button fx:id="btnJoinFiles" mnemonicParsing="false" onAction="#joinFiles" text="Join All Files" GridPane.columnIndex="4" />

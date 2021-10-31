@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.dl4j.jfx;
+package org.theseed.join;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +15,8 @@ import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.dl4j.jfx.MeanBiasDialog;
+import org.theseed.io.KeyedFileMap;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.jfx.BaseController;
 
@@ -26,7 +28,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
@@ -46,7 +47,7 @@ import javafx.stage.Stage;
  * @author Bruce Parrello
  *
  */
-public class JoinSpec {
+public abstract class JoinSpec implements IJoinSpec {
 
     // FIELDS
     /** logging facility */
@@ -72,13 +73,9 @@ public class JoinSpec {
     @FXML
     private ListView<String> lstColumns;
 
-    /** checkbox for exclusion mode */
-    @FXML
-    private CheckBox chkExclude;
-
     /** button to delete the file spec */
     @FXML
-    private Button btnDelete;
+    protected Button btnDelete;
 
     /**
      * Create a standard join-specification control.
@@ -89,25 +86,28 @@ public class JoinSpec {
     /**
      * Initialize this specifier for a specific file.
      *
-     * @param inputFile		file to be input
-     * @param first			TRUE if this is the first file, else FALSE
-     * @param parentDlg		master dialog for all the join specs
+     * @param parent	master dialog for all the join specs
+     * @param node		display node for this controller
      *
      * @throws IOException
      */
-    public void init(File inputFile, boolean first, JoinDialog parentDlg) throws IOException {
+    @Override
+    public void init(JoinDialog parent, Node node) {
         // Remember the parent dialog.
-        this.parent = parentDlg;
-        // If this is the first file, suppress the exclude and delete options.
-        this.chkExclude.setVisible(! first);
-        this.btnDelete.setVisible(! first);
+        this.parent = parent;
+        this.node = node;
+        // Clear the input file.
+        this.inFile = null;
+        // Perform any additional subclass initialization.
+        this.initialConfigure();
         // Allow multiple selections in the column list.
         this.lstColumns.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        // Denote that we are not exclusion-filtering.
-        this.chkExclude.setSelected(false);
-        // Initialize the column-based controls.
-        this.setupFile(inputFile);
     }
+
+    /**
+     * Perform any special setup for the subclass.
+     */
+    protected abstract void initialConfigure();
 
     /**
      * Here the user has selected a file as the input file.  We update the
@@ -138,6 +138,8 @@ public class JoinSpec {
         // Save the file.
         this.inFile = inputFile;
         this.txtInputFile.setText(inputFile.getName());
+        // Configure the parent.
+        this.parent.configureButtons();
     }
 
     /**
@@ -202,18 +204,30 @@ public class JoinSpec {
      */
     @FXML
     private void deleteFile(ActionEvent event) {
+        boolean confirmed = confirmDelete(this.inFile);
+        if (confirmed)
+            this.parent.deleteFile(this);
+
+    }
+
+    /**
+     * Confirm with the user if it's ok to delete a join specification.
+     *
+     * @param oldFile		current input file
+     */
+    protected static boolean confirmDelete(File oldFile) {
         // If there is a file in here, get the user to confirm the delete.
-        boolean confirm = true;
-        if (this.inFile != null) {
+        boolean retVal = true;
+        if (oldFile != null) {
             Alert a = new Alert(AlertType.CONFIRMATION);
             a.setTitle("Remove Input File");
-            a.setContentText("Delete file " + this.inFile + " from the input list?");
+            a.setContentText("Delete file " + oldFile + " from the input list?");
             Optional<ButtonType> buttonSelected = a.showAndWait();
-            confirm = (buttonSelected.isPresent() && buttonSelected.get() == ButtonType.OK);
+            retVal = (buttonSelected.isPresent() && buttonSelected.get() == ButtonType.OK);
         }
-        if (confirm)
-            this.parent.deleteFile(this);
+        return retVal;
     }
+
     /**
      * Here the user wants to invert the selections.
      *
@@ -297,43 +311,59 @@ public class JoinSpec {
     /**
      * @return the display node for this file specification
      */
-    protected Node getNode() {
+    @Override
+    public Node getNode() {
         return this.node;
     }
 
     /**
-     * Save the display node for this file specification.
-     *
-     * @param node 	the display node for this specification
+     * @return the input file
      */
-    protected void setNode(Node node) {
-        this.node = node;
+    protected File getInFile() {
+        return this.inFile;
     }
 
-    /**
-     * @return TRUE if this file is to be used for negative filtering, else FALSE
-     */
-    public boolean isNegative() {
-        return this.chkExclude.isSelected();
-    }
-
-    /**
-     * Here the user has checked or unchecked the Exclude checkbox.  If we are excluding, we remove
-     * all the column selections and disable the list box.
-     *
-     * @param event		event for checkbox click
-     */
-    @FXML
-    private void toggleExclude(ActionEvent event) {
-        if (this.chkExclude.isSelected()) {
-            // De-select all the columns.
-            this.noColumns(event);
-            // Disable the list box.
-            this.lstColumns.setDisable(true);
-        } else {
-            // Enable the list box.  We are back in normal mode.
-            this.lstColumns.setDisable(false);
+    @Override
+    public void apply(KeyedFileMap keyedMap) throws IOException {
+        // Here we need to read the input file and extract the key column and the data columns.
+        File inFile = this.getInFile();
+        try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
+            // Get the key column name and index.
+            String keyName = this.getKeyColumn();
+            int keyIdx = inStream.findField(keyName);
+            // Get the names and indices of the data columns.
+            List<String> headers = this.getHeaders();
+            int[] cols = new int[headers.size()];
+            for (int i = 0; i < cols.length; i++)
+                cols[i] = inStream.findField(headers.get(i));
+            // Append the headers to the output headers.
+            keyedMap.addHeaders(headers);
+            // Now read in the file.
+            for (TabbedLineReader.Line line : inStream) {
+                String key = line.get(keyIdx);
+                List<String> data = Arrays.stream(cols).mapToObj(i -> line.get(i)).collect(Collectors.toList());
+                this.processLine(keyedMap, key, data);
+            }
+            // Apply the file to the keyed map.
+            this.finishFile(keyedMap, headers.size());
         }
     }
+
+    /**
+     * Finish all processing for the current input file.
+     *
+     * @param keyedMap	current output map
+     * @param width		number of new columns for this input file
+     */
+    protected abstract void finishFile(KeyedFileMap keyedMap, int width);
+
+    /**
+     * Apply a line of data to the current output map.
+     *
+     * @param keyedMap		output map
+     * @param key			key of the current line
+     * @param data			data fields in the current line
+     */
+    protected abstract void processLine(KeyedFileMap keyedMap, String key, List<String> data);
 
 }
