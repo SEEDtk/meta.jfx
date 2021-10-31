@@ -51,7 +51,7 @@ public abstract class BaseController implements IController {
     /**
      * @return the stage for this window
      */
-    protected Stage getStage() {
+    public Stage getStage() {
         return this.stage;
     }
 

@@ -349,40 +349,62 @@ public class TrainingManager extends ResizableController implements ITrainReport
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Result Display", e.toString());
         }
     }
-    
+
     /**
      * Button event to compute mean bias.
-     * 
+     *
      * @param event		event descriptor
      */
     @FXML
     private void showMeanBias(ActionEvent event) {
-    	try {
+        try {
             Stage biasStage = new Stage();
             MeanBiasDialog biasDialog = (MeanBiasDialog) BaseController.loadFXML("MeanBiasDialog", biasStage);
             biasDialog.init(this.modelDirectory);
             biasStage.showAndWait();
-    	} catch (Exception e) {
+        } catch (Exception e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Computing Mean Bias", e.toString());
         }
     }
-    
+
     /**
      * Button event to make predictions.
-     * 
+     *
      * @param event		event descriptor
      */
     @FXML
     private void showPredict(ActionEvent event) {
-    	try {
-    		Stage predictStage = new Stage();
-    		PredictDialog predictDialog = (PredictDialog) BaseController.loadFXML("PredictDialog", predictStage);
-    		predictDialog.init(this.modelDirectory, this.modelType);
-    		predictStage.showAndWait();
-    	} catch (Exception e) {
+        try {
+            Stage predictStage = new Stage();
+            PredictDialog predictDialog = (PredictDialog) BaseController.loadFXML("PredictDialog", predictStage);
+            predictDialog.init(this.modelDirectory, this.modelType);
+            predictStage.showAndWait();
+        } catch (Exception e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Making Predictions", e.toString());
-    	}
+        }
     }
+
+    /**
+     * Button event to join files.
+     *
+     * @param event		event descriptor
+     */
+    @FXML
+    private void showJoinDialog(ActionEvent event) {
+        try {
+            // Get the primary input file.
+            File inFile = JoinSpec.chooseFile(this.modelDirectory, this.getStage());
+            if (inFile != null) {
+                Stage joinStage = new Stage();
+                JoinDialog joinDialog = (JoinDialog) BaseController.loadFXML("JoinDialog", joinStage);
+                joinDialog.init(inFile);
+                joinStage.showAndWait();
+            }
+        } catch (Exception e) {
+            BaseController.messageBox(Alert.AlertType.ERROR, "Error Joining Files", e.toString());
+        }
+    }
+
     /**
      * Button event to invoke cross-validation.
      *

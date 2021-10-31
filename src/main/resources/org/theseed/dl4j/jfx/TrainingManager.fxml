@@ -74,6 +74,7 @@
             <Button fx:id="btnTrainingView" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewTrainingFile" prefWidth="120.0" text="Show Training File" />
             <Button fx:id="btnMeanBias" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showMeanBias" prefWidth="120.0" text="Mean Bias" />
             <Button fx:id="btnPredict" layoutX="530.0" layoutY="23.0" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showPredict" prefWidth="120.0" text="Predict" />
+            <Button mnemonicParsing="false" onAction="#showJoinDialog" prefWidth="120.0" text="Join Files" />
          </children>
       </TilePane>
       <Button fx:id="btnAbortCommand" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#abortCommand" text="Abort Command" textFill="RED" GridPane.columnIndex="5" GridPane.rowIndex="2" />
