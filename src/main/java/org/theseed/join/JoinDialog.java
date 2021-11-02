@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.dl4j.jfx.MeanBiasDialog;
@@ -20,6 +22,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
@@ -64,6 +67,10 @@ public class JoinDialog extends ResizableController {
     @FXML
     private ChoiceBox<JoinType> cmbJoinType;
 
+    /** scroll pane */
+    @FXML
+    private ScrollPane scrlSpecs;
+
     /**
      * Initialize the join dialog.
      */
@@ -107,6 +114,13 @@ public class JoinDialog extends ResizableController {
         // Set up the add-file type.
         this.cmbJoinType.getItems().addAll(JoinType.usefulValues());
         this.cmbJoinType.getSelectionModel().select(JoinType.NATURALJOIN);
+        // Set up the width listener on the join box. This insures we scroll to the
+        // new specification when one is added.
+        this.joinBox.widthProperty().addListener((observable, oldVal, newVal) -> {
+                if (oldVal.doubleValue() < newVal.doubleValue())
+                    this.scrlSpecs.setHvalue(this.scrlSpecs.getHmax());
+            }
+        );
         // Configure the run button.
         this.configureButtons();
         this.configureJoinBox();
@@ -135,8 +149,9 @@ public class JoinDialog extends ResizableController {
             IJoinSpec newFileSpec = cmbJoinType.getSelectionModel().getSelectedItem().getController(this);
             this.joinBox.getChildren().add(newFileSpec.getNode());
             this.specList.add(newFileSpec);
-            // Configure the join box width and the button state.
+            // Configure the join box width.
             this.configureJoinBox();
+            // Update the button states.
             this.configureButtons();
         } catch (Exception e) {
             BaseController.messageBox(AlertType.ERROR, "Error Processing Input File", e.toString());
@@ -221,6 +236,18 @@ public class JoinDialog extends ResizableController {
         this.specList.remove(fileSpec);
         // Insure the join box is the correct size.
         this.configureJoinBox();
+    }
+
+    /**
+     * @return a computed name for this operation
+     */
+    public String getName() {
+        String retVal = "joined_table";
+        if (this.outFile != null) {
+            String name = StringUtils.substringBeforeLast(this.outFile.getName(), ".");
+            retVal = name.replaceAll("[^A-Za-z0-9]", "_");
+        }
+        return retVal;
     }
 
 }

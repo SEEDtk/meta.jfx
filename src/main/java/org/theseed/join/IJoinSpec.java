@@ -46,4 +46,11 @@ public interface IJoinSpec {
      */
     public Node getNode();
 
+    /**
+     * Set the title of the spec.
+     *
+     * @param title		title to display
+     */
+    public void setTitle(String title);
+
 }

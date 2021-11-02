@@ -7,19 +7,21 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.GridPane?>
 
-<GridPane hgap="5.0" prefHeight="500.0" prefWidth="400.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<GridPane hgap="5.0" minHeight="200.0" minWidth="400.0" prefHeight="500.0" prefWidth="400.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <rowConstraints>
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
    </rowConstraints>
    <columnConstraints>
       <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
       <ColumnConstraints minWidth="10.0" prefWidth="200.0" />
+      <ColumnConstraints />
    </columnConstraints>
    <children>
-      <Label text="Input File" />
-      <TextField fx:id="txtInputFile" editable="false" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" />
-      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2">
+      <Label text="Input File" GridPane.rowIndex="1" />
+      <TextField fx:id="txtInputFile" editable="false" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
          <children>
             <Button mnemonicParsing="false" onAction="#selectInput" text="..." GridPane.columnIndex="2" />
             <Button fx:id="btnDelete" mnemonicParsing="false" onAction="#deleteFile" text="X" textFill="RED">
@@ -29,8 +31,8 @@
             </Button>
          </children>
       </HBox>
-      <Label text="Key Column" GridPane.rowIndex="1" />
-      <ChoiceBox fx:id="cmbKeyColumn" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <Label text="Key Column" GridPane.rowIndex="2" />
+      <ChoiceBox fx:id="cmbKeyColumn" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+      <Label fx:id="lblTitle" text="File Filtering" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
    </children>
 </GridPane>
-

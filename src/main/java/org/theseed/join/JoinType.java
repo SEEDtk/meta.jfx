@@ -6,8 +6,6 @@ package org.theseed.join;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.theseed.dl4j.jfx.App;
-
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 
@@ -61,7 +59,7 @@ public enum JoinType {
 
         @Override
         protected String getFxml() {
-            return "FilterSpec,fxml";
+            return "FilterSpec.fxml";
         }
 
         @Override
@@ -129,12 +127,13 @@ public enum JoinType {
      * @throws IOException
      */
     public IJoinSpec getController(JoinDialog parent) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("/org/theseed/join/" + this.getFxml()));
+        FXMLLoader fxmlLoader = new FXMLLoader(JoinType.class.getResource(this.getFxml()));
         fxmlLoader.setController(this.createController());
         Node displayNode = fxmlLoader.load();
         // Initialize the join specification.
         IJoinSpec retVal = (IJoinSpec) fxmlLoader.getController();
         retVal.init(parent, displayNode);
+        retVal.setTitle(this.toString());
         return retVal;
 
     }

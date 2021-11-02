@@ -21,6 +21,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 
@@ -51,6 +52,10 @@ public abstract class FilterSpec implements IJoinSpec {
     /** key column selector */
     @FXML
     private ChoiceBox<String> cmbKeyColumn;
+
+    /** specification title */
+    @FXML
+    private Label lblTitle;
 
     @Override
     public void init(JoinDialog parent, Node node) {
@@ -151,5 +156,10 @@ public abstract class FilterSpec implements IJoinSpec {
      * @return TRUE if the key should be kept, else FALSE
      */
     protected abstract boolean keep(String key, Set<String> keys);
+
+    @Override
+    public void setTitle(String title) {
+        this.lblTitle.setText(title);
+    }
 
 }

@@ -29,6 +29,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SelectionMode;
@@ -77,7 +78,15 @@ public abstract class JoinSpec implements IJoinSpec {
     @FXML
     protected Button btnDelete;
 
-    /**
+    /** specification title */
+    @FXML
+    private Label lblTitle;
+
+    /** column qualifier */
+    @FXML
+    private TextField txtQualifier;
+
+   /**
      * Create a standard join-specification control.
      */
     public JoinSpec() {
@@ -336,6 +345,10 @@ public abstract class JoinSpec implements IJoinSpec {
             int[] cols = new int[headers.size()];
             for (int i = 0; i < cols.length; i++)
                 cols[i] = inStream.findField(headers.get(i));
+            // Add the qualifier to the headers, if needed.
+            String qualifier = this.txtQualifier.getText();
+            if (! qualifier.isBlank())
+                headers = headers.stream().map(x -> qualifier + "." + x).collect(Collectors.toList());
             // Append the headers to the output headers.
             keyedMap.addHeaders(headers);
             // Now read in the file.
@@ -365,5 +378,10 @@ public abstract class JoinSpec implements IJoinSpec {
      * @param data			data fields in the current line
      */
     protected abstract void processLine(KeyedFileMap keyedMap, String key, List<String> data);
+
+    @Override
+    public void setTitle(String title) {
+        this.lblTitle.setText(title);
+    }
 
 }

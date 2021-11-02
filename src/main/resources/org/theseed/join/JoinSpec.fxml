@@ -7,11 +7,13 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.GridPane?>
 
-<GridPane hgap="5.0" prefHeight="500.0" prefWidth="400.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<GridPane hgap="5.0" minHeight="500.0" minWidth="400.0" prefHeight="500.0" prefWidth="400.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <rowConstraints>
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="400.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="350.0" />
    </rowConstraints>
    <columnConstraints>
       <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
@@ -19,9 +21,9 @@
       <ColumnConstraints minWidth="10.0" prefWidth="75.0" />
    </columnConstraints>
    <children>
-      <Label text="Input File" />
-      <TextField fx:id="txtInputFile" editable="false" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" />
-      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2">
+      <Label text="Input File" GridPane.rowIndex="1" />
+      <TextField fx:id="txtInputFile" editable="false" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
          <children>
             <Button mnemonicParsing="false" onAction="#selectInput" text="..." GridPane.columnIndex="2" />
             <Button fx:id="btnDelete" mnemonicParsing="false" onAction="#deleteFile" text="X" textFill="RED">
@@ -31,20 +33,23 @@
             </Button>
          </children>
       </HBox>
-      <Label text="Key Column" GridPane.rowIndex="1" />
-      <ChoiceBox fx:id="cmbKeyColumn" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-      <Label text="Data Columns" GridPane.rowIndex="2" GridPane.valignment="TOP">
+      <Label text="Key Column" GridPane.rowIndex="2" />
+      <ChoiceBox fx:id="cmbKeyColumn" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+      <Label text="Data Columns" GridPane.rowIndex="4" GridPane.valignment="TOP">
          <padding>
             <Insets top="10.0" />
          </padding>
       </Label>
-      <ListView fx:id="lstColumns" prefHeight="400.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-      <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
+      <ListView fx:id="lstColumns" prefHeight="390.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="2" GridPane.rowIndex="4">
          <children>
             <Button mnemonicParsing="false" onAction="#allColumns" prefWidth="75.0" text="All" />
             <Button mnemonicParsing="false" onAction="#noColumns" prefWidth="75.0" text="None" />
             <Button mnemonicParsing="false" onAction="#invertColumns" prefWidth="75.0" text="Invert" />
          </children>
       </VBox>
+      <Label fx:id="lblTitle" text="File Join" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
+      <Label text="Column Qualifier" GridPane.rowIndex="3" />
+      <TextField fx:id="txtQualifier" GridPane.columnIndex="1" GridPane.rowIndex="3" />
    </children>
 </GridPane>
