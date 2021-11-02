@@ -7,8 +7,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -19,7 +23,6 @@ import org.theseed.dl4j.jfx.MeanBiasDialog;
 import org.theseed.io.KeyedFileMap;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.jfx.BaseController;
-
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -48,7 +51,7 @@ import javafx.stage.Stage;
  * @author Bruce Parrello
  *
  */
-public abstract class JoinSpec implements IJoinSpec {
+public class JoinSpec implements IJoinSpec {
 
     // FIELDS
     /** logging facility */
@@ -84,7 +87,55 @@ public abstract class JoinSpec implements IJoinSpec {
 
     /** column qualifier */
     @FXML
-    private TextField txtQualifier;
+    protected TextField txtQualifier;
+
+    /** combo box for join type */
+    @FXML
+    protected ChoiceBox<Type> cmbType;
+
+    public static enum Type {
+        NATURALJOIN {
+            @Override
+            public String toString() {
+                return "Natural";
+            }
+
+            @Override
+            protected void processMissing(Iterator<Entry<String, List<String>>> iter, List<String> data, int size) {
+                // For a natural join, missing values are removed from the output.
+                iter.remove();
+            }
+
+        }, LEFTJOIN {
+            @Override
+            public String toString() {
+                return "Left";
+            }
+
+            @Override
+            protected void processMissing(Iterator<Entry<String, List<String>>> iter, List<String> data, int size) {
+                // For a left join, the missing key's new fields are filled with empty strings.
+                for (int i = 0; i < size; i++)
+                    data.add("");
+            }
+
+        };
+
+        /**
+         * @return the string representation of this join type
+         */
+        public abstract String toString();
+
+        /**
+         * Process a missing line.  The line's key is in the incoming output map, but new the new
+         * file's input map.
+         *
+         * @param iter		iterator through the output map
+         * @param data		current record in the output map
+         * @param size		width of the new file's data
+         */
+        protected abstract void processMissing(Iterator<Entry<String, List<String>>> iter, List<String> data, int size);
+    }
 
    /**
      * Create a standard join-specification control.
@@ -114,9 +165,13 @@ public abstract class JoinSpec implements IJoinSpec {
     }
 
     /**
-     * Perform any special setup for the subclass.
+     * Perform any special setup for the subclass.  For this object, we set up the join-type
+     * combo box.
      */
-    protected abstract void initialConfigure();
+    protected void initialConfigure() {
+        this.cmbType.getItems().addAll(Type.values());
+        this.cmbType.getSelectionModel().clearAndSelect(0);
+    }
 
     /**
      * Here the user has selected a file as the input file.  We update the
@@ -334,9 +389,13 @@ public abstract class JoinSpec implements IJoinSpec {
 
     @Override
     public void apply(KeyedFileMap keyedMap) throws IOException {
+        // Get the join type.
+        Type joinType = this.cmbType.getValue();
         // Here we need to read the input file and extract the key column and the data columns.
         File inFile = this.getInFile();
         try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
+            // Create the input map.  This will contain the records in the new file.
+            Map<String, List<String>> inputMap = new HashMap<String, List<String>>(keyedMap.size());
             // Get the key column name and index.
             String keyName = this.getKeyColumn();
             int keyIdx = inStream.findField(keyName);
@@ -355,29 +414,26 @@ public abstract class JoinSpec implements IJoinSpec {
             for (TabbedLineReader.Line line : inStream) {
                 String key = line.get(keyIdx);
                 List<String> data = Arrays.stream(cols).mapToObj(i -> line.get(i)).collect(Collectors.toList());
-                this.processLine(keyedMap, key, data);
+                inputMap.put(key, data);
             }
-            // Apply the file to the keyed map.
-            this.finishFile(keyedMap, headers.size());
+            // Now we iterate through the output map and apply the keyed map.
+            Iterator<Map.Entry<String, List<String>>> iter = keyedMap.iterator();
+            while (iter.hasNext()) {
+                Map.Entry<String, List<String>> current = iter.next();
+                String key = current.getKey();
+                List<String> data = current.getValue();
+                // Is there an input record for this key?
+                List<String> newRecord = inputMap.get(key);
+                if (newRecord == null) {
+                    // No, do special processing.
+                    joinType.processMissing(iter, data, headers.size());
+                } else {
+                    // Yes, add the input columns.
+                    data.addAll(newRecord);
+                }
+            }
         }
     }
-
-    /**
-     * Finish all processing for the current input file.
-     *
-     * @param keyedMap	current output map
-     * @param width		number of new columns for this input file
-     */
-    protected abstract void finishFile(KeyedFileMap keyedMap, int width);
-
-    /**
-     * Apply a line of data to the current output map.
-     *
-     * @param keyedMap		output map
-     * @param key			key of the current line
-     * @param data			data fields in the current line
-     */
-    protected abstract void processLine(KeyedFileMap keyedMap, String key, List<String> data);
 
     @Override
     public void setTitle(String title) {

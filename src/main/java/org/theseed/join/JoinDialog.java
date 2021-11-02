@@ -113,7 +113,7 @@ public class JoinDialog extends ResizableController {
         this.specList.add(initController);
         // Set up the add-file type.
         this.cmbJoinType.getItems().addAll(JoinType.usefulValues());
-        this.cmbJoinType.getSelectionModel().select(JoinType.NATURALJOIN);
+        this.cmbJoinType.getSelectionModel().select(JoinType.JOIN);
         // Set up the width listener on the join box. This insures we scroll to the
         // new specification when one is added.
         this.joinBox.widthProperty().addListener((observable, oldVal, newVal) -> {

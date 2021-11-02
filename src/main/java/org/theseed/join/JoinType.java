@@ -38,7 +38,7 @@ public enum JoinType {
     }, FILTER {
         @Override
         protected Object createController() {
-            return new IncludeFilterSpec();
+            return new FilterSpec();
         }
 
         @Override
@@ -48,29 +48,13 @@ public enum JoinType {
 
         @Override
         public String toString() {
-            return "Inclusion Filter";
+            return "File Filtering";
         }
 
-    }, EXCLUDE {
+    }, JOIN {
         @Override
         protected Object createController() {
-            return new ExcludeFilterSpec();
-        }
-
-        @Override
-        protected String getFxml() {
-            return "FilterSpec.fxml";
-        }
-
-        @Override
-        public String toString() {
-            return "Exclusion Filter";
-        }
-
-    }, LEFTJOIN {
-        @Override
-        protected Object createController() {
-            return new LeftJoinSpec();
+            return new JoinSpec();
         }
 
         @Override
@@ -80,23 +64,7 @@ public enum JoinType {
 
         @Override
         public String toString() {
-            return "Left Join";
-        }
-
-    }, NATURALJOIN {
-        @Override
-        protected Object createController() {
-            return new NaturalJoinSpec();
-        }
-
-        @Override
-        protected String getFxml() {
-            return "JoinSpec.fxml";
-        }
-
-        @Override
-        public String toString() {
-            return "Natural Join";
+            return "File Join";
         }
 
     }, EXCELSAVE {

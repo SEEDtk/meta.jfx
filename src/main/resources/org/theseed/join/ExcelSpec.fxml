@@ -13,6 +13,7 @@
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
    </rowConstraints>
    <columnConstraints>
       <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
@@ -39,6 +40,13 @@
       </Label>
       <TextField fx:id="txtSheetName" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
       <Label fx:id="lblTitle" text="Save as Spreadsheet" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
-      <CheckBox fx:id="chkOpenFile" mnemonicParsing="false" text="Open File in Excel" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <CheckBox fx:id="chkOpenFile" mnemonicParsing="false" text="Open File in Excel" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <Label text="Number Precision" GridPane.rowIndex="3" />
+      <Slider fx:id="slidePrecision" blockIncrement="1.0" majorTickUnit="2.0" max="8.0" min="1.0" minorTickCount="1" showTickMarks="true" snapToTicks="true" value="2.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <Label fx:id="lblPrecision" text="2" GridPane.columnIndex="2" GridPane.rowIndex="3">
+         <GridPane.margin>
+            <Insets left="5.0" />
+         </GridPane.margin>
+      </Label>
    </children>
 </GridPane>

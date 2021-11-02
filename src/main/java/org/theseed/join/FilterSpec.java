@@ -31,7 +31,7 @@ import javafx.scene.control.Alert.AlertType;
  * @author Bruce Parrello
  *
  */
-public abstract class FilterSpec implements IJoinSpec {
+public class FilterSpec implements IJoinSpec {
 
     // FIELDS
     /** logging facility */
@@ -57,6 +57,47 @@ public abstract class FilterSpec implements IJoinSpec {
     @FXML
     private Label lblTitle;
 
+    /** type of filtering */
+    @FXML
+    private ChoiceBox<Type> cmbType;
+
+    public static enum Type {
+        INCLUDE {
+            @Override
+            public String toString() {
+                return "include";
+            }
+
+            @Override
+            public boolean keep(String key, Set<String> inputKeys) {
+                return inputKeys.contains(key);
+            }
+
+        }, EXCLUDE {
+            @Override
+            public String toString() {
+                return "exclude";
+            }
+
+            @Override
+            public boolean keep(String key, Set<String> inputKeys) {
+                return ! inputKeys.contains(key);
+            }
+
+        };
+
+        /**
+         * @return the string representation of the type
+         */
+        public abstract String toString();
+
+        /**
+         * @return TRUE to keep this key, else FALSE
+         */
+        public abstract boolean keep(String key, Set<String> inputKeys);
+
+    }
+
     @Override
     public void init(JoinDialog parent, Node node) {
         // Save the parent dialog information.
@@ -64,6 +105,9 @@ public abstract class FilterSpec implements IJoinSpec {
         this.node = node;
         // Denote there is no input file.
         this.inFile = null;
+        // Set up the type-selection combo box.
+        this.cmbType.getItems().addAll(Type.values());
+        this.cmbType.getSelectionModel().clearAndSelect(0);
     }
 
     @Override
@@ -97,6 +141,8 @@ public abstract class FilterSpec implements IJoinSpec {
         }
         // Select the first column as the key.
         this.cmbKeyColumn.getSelectionModel().clearAndSelect(0);
+        // Default to natural join.
+        this.cmbType.getSelectionModel().select(Type.INCLUDE);
         // Save the file.
         this.inFile = inputFile;
         this.txtInputFile.setText(inputFile.getName());
@@ -135,6 +181,8 @@ public abstract class FilterSpec implements IJoinSpec {
 
     @Override
     public void apply(KeyedFileMap outputMap) throws IOException {
+        // Get the filtering type.
+        Type filterType = this.cmbType.getValue();
         // Get the set of keys in this input file.
         String keyColumn = this.cmbKeyColumn.getValue();
         Set<String> keys = TabbedLineReader.readSet(this.inFile, keyColumn);
@@ -142,20 +190,10 @@ public abstract class FilterSpec implements IJoinSpec {
         Iterator<Map.Entry<String, List<String>>> iter = outputMap.iterator();
         while (iter.hasNext()) {
             String key = iter.next().getKey();
-            if (! this.keep(key, keys))
+            if (! filterType.keep(key, keys))
                 iter.remove();
         }
     }
-
-    /**
-     * Determine whether or not this key belongs in the output file.
-     *
-     * @param key	current output key
-     * @param keys	set of keys in this input file
-     *
-     * @return TRUE if the key should be kept, else FALSE
-     */
-    protected abstract boolean keep(String key, Set<String> keys);
 
     @Override
     public void setTitle(String title) {

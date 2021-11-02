@@ -11,8 +11,9 @@ import java.util.regex.Pattern;
 
 import java.awt.Desktop;
 
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
@@ -23,6 +24,7 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFName;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -36,6 +38,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -48,8 +51,6 @@ import javafx.stage.FileChooser.ExtensionFilter;
  */
 public class ExcelSaveSpec implements IJoinSpec {
 
-    /** color to use for header */
-    private static final short HEAD_COLOR = IndexedColors.INDIGO.getIndex();
     // FIELDS
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(ExcelSaveSpec.class);
@@ -59,10 +60,16 @@ public class ExcelSaveSpec implements IJoinSpec {
     private JoinDialog parent;
     /** display node for this join specification */
     private Node node;
+    /** number format precision */
+    private int precision;
     /** integer data type pattern */
     protected static final Pattern INTEGER_PATTERN = Pattern.compile("\\s*[\\-+]?\\d+");
     /** double data type pattern */
     protected static final Pattern DOUBLE_PATTERN = Pattern.compile("\\s*[\\-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][\\-+]?\\d+)?");
+    /** color to use for header */
+    private static final short HEAD_COLOR = IndexedColors.INDIGO.getIndex();
+    /** color to use for data */
+    private static final XSSFColor BAND_COLOR = new XSSFColor(new byte[] { (byte) 0xDD, (byte) 0xEE, (byte) 0xFF }, null);
 
     // CONTROLS
 
@@ -82,6 +89,15 @@ public class ExcelSaveSpec implements IJoinSpec {
     @FXML
     private CheckBox chkOpenFile;
 
+    /** number format precision slider */
+    @FXML
+    private Slider slidePrecision;
+
+    /** label to display number format precision */
+    @FXML
+    private Label lblPrecision;
+
+
     @Override
     public void init(JoinDialog parent, Node node) {
         // Connect the parent dialog.
@@ -93,6 +109,23 @@ public class ExcelSaveSpec implements IJoinSpec {
         this.txtSheetName.setText(parent.getName());
         // If we cannot use the desktop, disable the open-excel button.
         this.chkOpenFile.setVisible(Desktop.isDesktopSupported());
+        // Get the initial number format precision.
+        this.precision = (int) this.slidePrecision.getValue();
+        // Set up a listener for the number format slider.
+        this.slidePrecision.valueProperty().addListener((observable, oldVal, newVal) -> {
+            this.updatePrecision(newVal.intValue());
+        });
+    }
+
+    /**
+     * This is called when the precision slider changes.  We use it to update
+     * the label.
+     *
+     * @param intValue	new value of slider
+     */
+    private void updatePrecision(int intValue) {
+        this.precision = intValue;
+        this.lblPrecision.setText(Integer.toString(intValue));
     }
 
     @Override
@@ -139,23 +172,28 @@ public class ExcelSaveSpec implements IJoinSpec {
             // Create the special formatting styles.
             DataFormat format = workbook.createDataFormat();
             short intFmt = format.getFormat("##0");
-            short dblFmt = format.getFormat("##0.0000");
+            short dblFmt = format.getFormat("##0." + StringUtils.repeat("0", this.precision));
             XSSFCellStyle headStyle = workbook.createCellStyle();
             headStyle.setFillForegroundColor(HEAD_COLOR);
             headStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headStyle.setBorderBottom(BorderStyle.MEDIUM);
             Font font = workbook.createFont();
             font.setColor(HSSFColor.HSSFColorPredefined.WHITE.getIndex());
             headStyle.setFont(font);
             XSSFCellStyle numStyle = workbook.createCellStyle();
             numStyle.setDataFormat(dblFmt);
             numStyle.setAlignment(HorizontalAlignment.RIGHT);
+            this.shadeCell(numStyle);
             XSSFCellStyle intStyle = workbook.createCellStyle();
             intStyle.setDataFormat(intFmt);
             intStyle.setAlignment(HorizontalAlignment.RIGHT);
+            this.shadeCell(intStyle);
             XSSFCellStyle flagStyle = workbook.createCellStyle();
             flagStyle.setAlignment(HorizontalAlignment.CENTER);
+            this.shadeCell(flagStyle);
             XSSFCellStyle cellStyle = workbook.createCellStyle();
-            flagStyle.setAlignment(HorizontalAlignment.LEFT);
+            cellStyle.setAlignment(HorizontalAlignment.LEFT);
+            this.shadeCell(cellStyle);
             // Create the header row.
             XSSFRow row = newSheet.createRow(0);
             for (int c = 0; c < headers.size(); c++) {
@@ -239,6 +277,20 @@ public class ExcelSaveSpec implements IJoinSpec {
                 myDesktop.open(this.outFile);
             }
         }
+    }
+
+    /**
+     * Set the fill color and border for this cell style.
+     *
+     * @param style		cell style to modify
+     */
+    private void shadeCell(XSSFCellStyle style) {
+        style.setBorderBottom(BorderStyle.DOTTED);
+        style.setBorderTop(BorderStyle.DOTTED);
+        style.setBorderLeft(BorderStyle.DOTTED);
+        style.setBorderRight(BorderStyle.DOTTED);
+        style.setFillForegroundColor(BAND_COLOR);
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
     }
 
     /**

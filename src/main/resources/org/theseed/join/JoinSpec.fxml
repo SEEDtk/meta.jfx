@@ -51,5 +51,6 @@
       <Label fx:id="lblTitle" text="File Join" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
       <Label text="Column Qualifier" GridPane.rowIndex="3" />
       <TextField fx:id="txtQualifier" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <ChoiceBox fx:id="cmbType" prefWidth="150.0" GridPane.columnIndex="2" GridPane.rowIndex="2" />
    </children>
 </GridPane>
