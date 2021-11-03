@@ -5,7 +5,6 @@ package org.theseed.dl4j.jfx;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import org.theseed.jfx.ColumnAnalysis;
@@ -134,7 +133,6 @@ public class TrainingView extends ResizableController {
         try (TabbedLineReader inStream = new TabbedLineReader(trainingFile)) {
             // Use the header to create the columns.
             this.headers = inStream.getLabels();
-            Arrays.sort(this.headers);
             for (int i = 0; i < headers.length; i++) {
                 TableColumn<String[], String> newCol = new TableColumn<>(this.headers[i]);
                 newCol.setCellValueFactory(new CellDisplayer(i));

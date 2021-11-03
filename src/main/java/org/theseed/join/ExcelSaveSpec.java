@@ -3,13 +3,10 @@
  */
 package org.theseed.join;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import java.awt.Desktop;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.util.HSSFColor;
@@ -33,14 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.io.KeyedFileMap;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
-import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 
 /**
@@ -49,23 +42,17 @@ import javafx.stage.FileChooser.ExtensionFilter;
  * @author Bruce Parrello
  *
  */
-public class ExcelSaveSpec implements IJoinSpec {
+public class ExcelSaveSpec extends SaveSpec {
 
     // FIELDS
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(ExcelSaveSpec.class);
-    /** output file */
-    private File outFile;
-    /** parent dialog */
-    private JoinDialog parent;
-    /** display node for this join specification */
-    private Node node;
     /** number format precision */
     private int precision;
     /** integer data type pattern */
     protected static final Pattern INTEGER_PATTERN = Pattern.compile("\\s*[\\-+]?\\d+");
     /** double data type pattern */
-    protected static final Pattern DOUBLE_PATTERN = Pattern.compile("\\s*[\\-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][\\-+]?\\d+)?");
+    protected static final Pattern DOUBLE_PATTERN = KeyedFileMap.DOUBLE_PATTERN;
     /** color to use for header */
     private static final short HEAD_COLOR = IndexedColors.INDIGO.getIndex();
     /** color to use for data */
@@ -73,21 +60,9 @@ public class ExcelSaveSpec implements IJoinSpec {
 
     // CONTROLS
 
-    /** display field for output file name */
-    @FXML
-    private TextField txtOutputFile;
-
     /** sheet name to use */
     @FXML
     private TextField txtSheetName;
-
-    /** specification title */
-    @FXML
-    private Label lblTitle;
-
-    /** checkbox for open-file request */
-    @FXML
-    private CheckBox chkOpenFile;
 
     /** number format precision slider */
     @FXML
@@ -97,25 +72,6 @@ public class ExcelSaveSpec implements IJoinSpec {
     @FXML
     private Label lblPrecision;
 
-
-    @Override
-    public void init(JoinDialog parent, Node node) {
-        // Connect the parent dialog.
-        this.parent = parent;
-        this.node = node;
-        // Denote there is no output file.
-        this.outFile = null;
-        // Default a sheet name.
-        this.txtSheetName.setText(parent.getName());
-        // If we cannot use the desktop, disable the open-excel button.
-        this.chkOpenFile.setVisible(Desktop.isDesktopSupported());
-        // Get the initial number format precision.
-        this.precision = (int) this.slidePrecision.getValue();
-        // Set up a listener for the number format slider.
-        this.slidePrecision.valueProperty().addListener((observable, oldVal, newVal) -> {
-            this.updatePrecision(newVal.intValue());
-        });
-    }
 
     /**
      * This is called when the precision slider changes.  We use it to update
@@ -130,32 +86,7 @@ public class ExcelSaveSpec implements IJoinSpec {
 
     @Override
     public boolean isValid() {
-        return (this.outFile != null && ! this.txtSheetName.getText().isBlank());
-    }
-
-    /**
-     * Here the user wants to specify the excel output file.
-     *
-     * @param event		event for button press
-     */
-    @FXML
-    private void selectOutput(ActionEvent event) {
-        // Initialize the chooser dialog.
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Select Output Spreadsheet");
-        chooser.setInitialDirectory(this.parent.getParentDirectory());
-        chooser.getExtensionFilters().addAll(new ExtensionFilter("Excel File", "*.xlsx"));
-        // Get the file.
-        File newOutFile = chooser.showSaveDialog(this.parent.getStage());
-        if (newOutFile != null) {
-            // We have a new output file.  Save the parent directory for next time.
-            this.parent.setParentDirectory(newOutFile.getParentFile());
-            // Save the file name.
-            this.outFile = newOutFile;
-            this.txtOutputFile.setText(this.outFile.getName());
-            // Update the state of the parent.
-            this.parent.configureButtons();
-        }
+        return (this.getOutFile() != null && ! this.txtSheetName.getText().isBlank());
     }
 
     @Override
@@ -268,14 +199,10 @@ public class ExcelSaveSpec implements IJoinSpec {
             String tableRangeAddress = tableRange.formatAsString(sheetName, true);
             tableName.setRefersToFormula(tableRangeAddress);
             // Now write the table out.
-            try (FileOutputStream saveStream = new FileOutputStream(this.outFile)) {
+            try (FileOutputStream saveStream = new FileOutputStream(this.getOutFile())) {
                 workbook.write(saveStream);
             }
-            if (this.chkOpenFile.isSelected()) {
-                // Here the user wants to open the file in Excel.
-                Desktop myDesktop = Desktop.getDesktop();
-                myDesktop.open(this.outFile);
-            }
+            this.checkForOpen();
         }
     }
 
@@ -311,25 +238,25 @@ public class ExcelSaveSpec implements IJoinSpec {
     }
 
     @Override
-    public Node getNode() {
-        return this.node;
-    }
-
-    /**
-     * Here the user wants to delete the file from the file list.
-     *
-     * @param event		event for button press
-     */
-    @FXML
-    private void deleteFile(ActionEvent event) {
-        boolean confirmed = JoinSpec.confirmDelete(this.outFile);
-        if (confirmed)
-            this.parent.deleteFile(this);
+    protected String getFileLabel() {
+        return "Spreadsheet";
     }
 
     @Override
-    public void setTitle(String title) {
-        this.lblTitle.setText(title);
+    protected ExtensionFilter getFilter() {
+        return JoinDialog.EXCEL_FILTER;
+    }
+
+    @Override
+    protected void initControls() {
+        // Default a sheet name.
+        this.txtSheetName.setText(this.getParent().getName());
+        // Get the initial number format precision.
+        this.precision = (int) this.slidePrecision.getValue();
+        // Set up a listener for the number format slider.
+        this.slidePrecision.valueProperty().addListener((observable, oldVal, newVal) -> {
+            this.updatePrecision(newVal.intValue());
+        });
     }
 
 }

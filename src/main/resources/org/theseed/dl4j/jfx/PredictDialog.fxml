@@ -28,5 +28,6 @@
       <TextField fx:id="txtOutputFile" editable="false" prefWidth="200.0" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" GridPane.rowIndex="1" />
       <Button mnemonicParsing="false" onAction="#selectOutput" text="..." GridPane.columnIndex="2" GridPane.rowIndex="1" />
       <Button fx:id="btnRun" alignment="CENTER" defaultButton="true" mnemonicParsing="false" onAction="#runPredictions" prefHeight="25.0" prefWidth="140.0" text="Make Predictions" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+      <CheckBox fx:id="chkJoinRequest" mnemonicParsing="false" text="Send to Join Dialog" GridPane.columnIndex="1" GridPane.rowIndex="2" />
    </children>
 </GridPane>

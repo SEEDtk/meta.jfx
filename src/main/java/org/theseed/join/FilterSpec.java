@@ -157,7 +157,7 @@ public class FilterSpec implements IJoinSpec {
      */
     @FXML
     private void selectInput(ActionEvent event) {
-        File retVal = JoinSpec.chooseFile(this.parent.getParentDirectory(), this.parent.getStage());
+        File retVal = this.parent.chooseFile(JoinDialog.FLAT_FILTER, "Filtering File");
         if (retVal != null) {
             try {
                 this.setupFile(retVal);
@@ -198,6 +198,11 @@ public class FilterSpec implements IJoinSpec {
     @Override
     public void setTitle(String title) {
         this.lblTitle.setText(title);
+    }
+
+    @Override
+    public boolean isOutput() {
+        return false;
     }
 
 }

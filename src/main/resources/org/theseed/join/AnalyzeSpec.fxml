@@ -1,7 +1,6 @@
-chHi<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.text.*?>
-<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
@@ -12,6 +11,7 @@ chHi<?xml version="1.0" encoding="UTF-8"?>
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="TOP" vgrow="ALWAYS" />
    </rowConstraints>
    <columnConstraints>
       <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
@@ -19,11 +19,12 @@ chHi<?xml version="1.0" encoding="UTF-8"?>
       <ColumnConstraints />
    </columnConstraints>
    <children>
-      <Label text="Input File" GridPane.rowIndex="1" />
-      <TextField fx:id="txtInputFile" editable="false" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <Label fx:id="lblTitle" text="Column Analysis" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
+      <Label text="Label File" GridPane.rowIndex="1" />
+      <TextField fx:id="txtLabelFile" editable="false" styleClass="readOnly" stylesheets="@mods.css" GridPane.columnIndex="1" GridPane.rowIndex="1" />
       <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
          <children>
-            <Button mnemonicParsing="false" onAction="#selectInput" text="..." GridPane.columnIndex="2" />
+            <Button mnemonicParsing="false" onAction="#selectLabels" text="..." GridPane.columnIndex="2" />
             <Button mnemonicParsing="false" onAction="#deleteFile" text="X" textFill="RED">
                <font>
                   <Font name="System Bold" size="12.0" />
@@ -31,9 +32,13 @@ chHi<?xml version="1.0" encoding="UTF-8"?>
             </Button>
          </children>
       </HBox>
-      <Label text="Key Column" GridPane.rowIndex="2" />
-      <ChoiceBox fx:id="cmbKeyColumn" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-      <Label fx:id="lblTitle" text="File Filtering" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
-      <ChoiceBox fx:id="cmbType" prefHeight="25.0" prefWidth="75.0" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+      <TableView fx:id="tblLabels" prefHeight="350.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+         <columns>
+            <TableColumn fx:id="colLabel" prefWidth="150.0" text="Label" />
+            <TableColumn fx:id="colCount" prefWidth="50.0" text="Count" />
+         </columns></TableView>
+      <Label text="Labels" GridPane.rowIndex="3" />
+      <Label text="Meta Col Name" GridPane.rowIndex="2" />
+      <TextField fx:id="txtMetaColName" text="column_name" GridPane.columnIndex="1" GridPane.rowIndex="2" />
    </children>
 </GridPane>

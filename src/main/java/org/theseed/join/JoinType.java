@@ -21,7 +21,7 @@ import javafx.scene.Node;
 public enum JoinType {
     INIT {
         @Override
-        protected Object createController() {
+        protected IJoinSpec createController() {
             return new FileSpec();
         }
 
@@ -37,7 +37,7 @@ public enum JoinType {
 
     }, FILTER {
         @Override
-        protected Object createController() {
+        protected IJoinSpec createController() {
             return new FilterSpec();
         }
 
@@ -53,7 +53,7 @@ public enum JoinType {
 
     }, JOIN {
         @Override
-        protected Object createController() {
+        protected IJoinSpec createController() {
             return new JoinSpec();
         }
 
@@ -69,18 +69,50 @@ public enum JoinType {
 
     }, EXCELSAVE {
         @Override
-        protected Object createController() {
+        protected IJoinSpec createController() {
             return new ExcelSaveSpec();
         }
 
         @Override
         protected String getFxml() {
-            return "ExcelSpec.fxml";
+            return "ExcelSaveSpec.fxml";
         }
 
         @Override
         public String toString() {
             return "Save to Excel";
+        }
+
+    }, FILESAVE {
+        @Override
+        protected IJoinSpec createController() {
+            return new FileSaveSpec();
+        }
+
+        @Override
+        protected String getFxml() {
+            return "FileSaveSpec.fxml";
+        }
+
+        @Override
+        public String toString() {
+            return "Save to Flat File";
+        }
+
+    }, ANALYZE {
+        @Override
+        protected IJoinSpec createController() {
+            return new AnalyzeSpec();
+        }
+
+        @Override
+        protected String getFxml() {
+            return "AnalyzeSpec.fxml";
+        }
+
+        @Override
+        public String toString() {
+            return "Analyze Column Bias";
         }
 
     };
@@ -109,7 +141,7 @@ public enum JoinType {
     /**
      * @return a new controller object for this type of join spec
      */
-    protected abstract Object createController();
+    protected abstract IJoinSpec createController();
 
     /**
      * @return the resource name for this join type

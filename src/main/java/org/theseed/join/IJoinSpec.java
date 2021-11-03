@@ -53,4 +53,9 @@ public interface IJoinSpec {
      */
     public void setTitle(String title);
 
+    /**
+     * @return TRUE if this is an output specification
+     */
+    public boolean isOutput();
+
 }

@@ -19,7 +19,6 @@ import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.dl4j.jfx.MeanBiasDialog;
 import org.theseed.io.KeyedFileMap;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.jfx.BaseController;
@@ -37,9 +36,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
-import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.stage.Stage;
 
 /**
  * This control group represents the data for a single file in a join operation.  It allows specification of
@@ -181,12 +177,15 @@ public class JoinSpec implements IJoinSpec {
      *
      * @throws IOException
      */
-    private void setupFile(File inputFile) throws IOException {
+    public void setupFile(File inputFile) throws IOException {
         // Remember this directory.
         this.parent.setParentDirectory(inputFile.getParentFile());
-        // Get the column headers for this file and fill the controls.
+        // Erase the current control contents.
         ObservableList<String> keyColumn = this.cmbKeyColumn.getItems();
         ObservableList<String> dataColumns = this.lstColumns.getItems();
+        keyColumn.clear();
+        dataColumns.clear();
+        // Get the column headers for this file and fill the controls.
         try (TabbedLineReader inStream = new TabbedLineReader(inputFile)) {
             if (inStream.size() < 1)
                 throw new IOException("Input file must contain at least one column.");
@@ -213,7 +212,7 @@ public class JoinSpec implements IJoinSpec {
      */
     @FXML
     private void selectInput(ActionEvent event) {
-        File retVal = chooseFile(this.parent.getParentDirectory(), this.parent.getStage());
+        File retVal = this.parent.chooseFile(JoinDialog.FLAT_FILTER, "File to Join");
         if (retVal != null) {
             try {
                 this.setupFile(retVal);
@@ -221,24 +220,6 @@ public class JoinSpec implements IJoinSpec {
                 BaseController.messageBox(AlertType.ERROR, "Error in Input File", e.toString());
             }
         }
-    }
-
-    /**
-     * @return an input file chosen by the user
-     *
-     * @param parentFile	directory to start in
-     * @param stage			stage on which controls are being displayed
-     */
-    public static File chooseFile(File parentFile, Stage stage) {
-        // Initialize the chooser dialog.
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Select File to Join");
-        chooser.setInitialDirectory(parentFile);
-        chooser.getExtensionFilters().addAll(MeanBiasDialog.TEXT_FILES,
-                new ExtensionFilter("All Files", "*.*"));
-        // Get the file.
-        File retVal = chooser.showOpenDialog(stage);
-        return retVal;
     }
 
     /**
@@ -438,6 +419,11 @@ public class JoinSpec implements IJoinSpec {
     @Override
     public void setTitle(String title) {
         this.lblTitle.setText(title);
+    }
+
+    @Override
+    public boolean isOutput() {
+        return false;
     }
 
 }

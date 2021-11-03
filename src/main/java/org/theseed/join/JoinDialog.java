@@ -3,6 +3,7 @@
  */
 package org.theseed.join;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,7 +13,6 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.dl4j.jfx.MeanBiasDialog;
 import org.theseed.io.KeyedFileMap;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.ResizableController;
@@ -23,7 +23,6 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -48,12 +47,16 @@ public class JoinDialog extends ResizableController {
     private List<IJoinSpec> specList;
     /** default directory for file dialogs */
     private File parentDirectory;
+    /** file filter for all files */
+    public static final ExtensionFilter ALL_FILTER = new ExtensionFilter("All Files", "*.*");
+    /** file filter for excel files */
+    public static final ExtensionFilter EXCEL_FILTER = new ExtensionFilter("Excel File", "*.xlsx");
+    /** file filter for flat files */
+    public static final ExtensionFilter FLAT_FILTER = new ExtensionFilter("Tab-Delimited File", "*.tsv", "*.txt", "*.tbl");
+    /** file filter for CSV files */
+    public static final ExtensionFilter CSV_FILTER = new ExtensionFilter("Comma-Delimited Files", "*.csv");
 
     // CONTROLS
-
-    /** output file name */
-    @FXML
-    private TextField txtOutputFile;
 
     /** run button */
     @FXML
@@ -93,10 +96,11 @@ public class JoinDialog extends ResizableController {
      * primary input file. This is the one that can't be deleted.
      *
      * @param parentDirectory	directory to use for first file dialog
+     * @param initFile			initial input file (or NULL if none)
      *
      * @throws IOException
      */
-    public void init(File parentDirectory) throws IOException {
+    public void init(File parentDirectory, File initFile) throws IOException {
         // Denote we have no output file.
         this.outFile = null;
         // Set up the initial directory.
@@ -108,9 +112,13 @@ public class JoinDialog extends ResizableController {
         // Note that this window is modal.
         currStage.initModality(Modality.APPLICATION_MODAL);
         // Create the join specification and store it in the join box.
-        IJoinSpec initController = JoinType.INIT.getController(this);
+        FileSpec initController = (FileSpec) JoinType.INIT.getController(this);
         this.joinBox.getChildren().add(initController.getNode());
         this.specList.add(initController);
+        if (initFile != null) {
+            // Here the user has a starting file for us.
+            initController.setupFile(initFile);
+        }
         // Set up the add-file type.
         this.cmbJoinType.getItems().addAll(JoinType.usefulValues());
         this.cmbJoinType.getSelectionModel().select(JoinType.JOIN);
@@ -130,7 +138,12 @@ public class JoinDialog extends ResizableController {
      * Insure the run button is only enabled if we are ready.
      */
     protected void configureButtons() {
-        boolean invalid = (this.outFile == null);
+        boolean invalid = true;
+        if (this.specList.size() > 0) {
+            // We can only be valid if the last file spec is an output type.
+            IJoinSpec lastSpec = this.specList.get(this.specList.size() - 1);
+            invalid = ! lastSpec.isOutput();
+        }
         Iterator<IJoinSpec> iter = this.specList.iterator();
         while (iter.hasNext() && ! invalid)
             invalid = ! iter.next().isValid();
@@ -166,28 +179,6 @@ public class JoinDialog extends ResizableController {
     }
 
     /**
-     * This event fires when the user wants to select the output file.
-     *
-     * @param event		button-click event
-     */
-    @FXML
-    private void selectOutputFile(ActionEvent event) {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Select Join Output File");
-        chooser.setInitialDirectory(this.parentDirectory);
-        chooser.getExtensionFilters().addAll(MeanBiasDialog.TEXT_FILES,
-                new ExtensionFilter("All Files", "*.*"));
-        // Get the file.
-        File retVal = chooser.showSaveDialog(this.getStage());
-        if (retVal != null) {
-            this.outFile = retVal;
-            this.parentDirectory = retVal.getParentFile();
-            this.txtOutputFile.setText(this.outFile.getName());
-            this.configureButtons();
-        }
-    }
-
-    /**
      * This event first when the user wants to join the files.
      *
      * @param event		button-click event
@@ -201,11 +192,10 @@ public class JoinDialog extends ResizableController {
             // Run through all the file specs, applying them.
             for (IJoinSpec joinSpec : this.specList)
                 joinSpec.apply(outputMap);
-            // Write out the result.
-            outputMap.write(this.outFile);
             // Tell the user we're done.
             BaseController.messageBox(AlertType.INFORMATION, "Join Operation Complete",
-                    "Join output written to " + this.outFile + ".");
+                    String.format("%d file operations performed.  %d data records in result.",
+                            this.specList.size(), outputMap.size()));
         } catch (Exception e) {
             BaseController.messageBox(AlertType.ERROR, "Error in Join Operation", e.toString());
         }
@@ -236,6 +226,25 @@ public class JoinDialog extends ResizableController {
         this.specList.remove(fileSpec);
         // Insure the join box is the correct size.
         this.configureJoinBox();
+        // Configure the join button.
+        this.configureButtons();
+    }
+
+    /**
+     * @return an input file chosen by the user
+     *
+     * @param parentFile	directory to start in
+     * @param stage			stage on which controls are being displayed
+     */
+    public File chooseFile(ExtensionFilter filter, String label) {
+        // Initialize the chooser dialog.
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select " + label);
+        chooser.setInitialDirectory(this.parentDirectory);
+        chooser.getExtensionFilters().addAll(filter, ALL_FILTER);
+        // Get the file.
+        File retVal = chooser.showOpenDialog(this.getStage());
+        return retVal;
     }
 
     /**
@@ -248,6 +257,41 @@ public class JoinDialog extends ResizableController {
             retVal = name.replaceAll("[^A-Za-z0-9]", "_");
         }
         return retVal;
+    }
+
+    /**
+     * Ask the user for an output file.
+     *
+     * @param filter		extension filter for the file type
+     * @param label			label for the file type
+     *
+     * @return the new file, or NULL if the user cancelled out
+     */
+    public File selectOutput(ExtensionFilter filter, String label) {
+        // Initialize the chooser dialog.
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select Output " + label);
+        chooser.setInitialDirectory(this.getParentDirectory());
+        chooser.getExtensionFilters().addAll(filter);
+        // Get the file.
+        File retVal = chooser.showSaveDialog(this.getStage());
+        if (retVal != null) {
+            // We have a new output file.  Save the parent directory for next time.
+            this.setParentDirectory(retVal.getParentFile());
+        }
+        return retVal;
+    }
+
+    /**
+     * Open the specified file in its default application.
+     *
+     * @param targetFile	file to open
+     *
+     * @throws IOException
+     */
+    public static void openFile(File targetFile) throws IOException {
+        Desktop myDesktop = Desktop.getDesktop();
+        myDesktop.open(targetFile);
     }
 
 }

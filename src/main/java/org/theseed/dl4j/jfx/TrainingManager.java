@@ -5,6 +5,7 @@ package org.theseed.dl4j.jfx;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -139,10 +140,6 @@ public class TrainingManager extends ResizableController implements ITrainReport
     /** button to view results */
     @FXML
     private Button btnViewResults;
-
-    /** button to compute mean bias */
-    @FXML
-    private Button btnMeanBias;
 
     /** button to make predictions */
     @FXML
@@ -291,18 +288,41 @@ public class TrainingManager extends ResizableController implements ITrainReport
     @FXML
     private void runSearch(ActionEvent event) {
         try {
-            Stage dialogStage = new Stage();
-            ParmDialog dialog = (ParmDialog) BaseController.loadFXML("ParmDialog", dialogStage);
-            dialog.init(this.parmFile, this.modelType);
-            dialogStage.showAndWait();
-            if (dialog.getResult()) {
-                ICommand processor = new SearchProcessor(this);
-                String[] parms = new String[] { "-t", this.modelType.toString(), this.modelDirectory.toString() };
-                executeCommand(processor, "SEARCH", parms);
+            if (! this.isValidTraining()) {
+                BaseController.messageBox(Alert.AlertType.ERROR, "Uninitialized Training",
+                        "Training file has no data.  You may need a data conversion first.");
+            } else {
+                Stage dialogStage = new Stage();
+                ParmDialog dialog = (ParmDialog) BaseController.loadFXML("ParmDialog", dialogStage);
+                dialog.init(this.parmFile, this.modelType);
+                dialogStage.showAndWait();
+                if (dialog.getResult()) {
+                    ICommand processor = new SearchProcessor(this);
+                    String[] parms = new String[] { "-t", this.modelType.toString(), this.modelDirectory.toString() };
+                    executeCommand(processor, "SEARCH", parms);
+                }
             }
         } catch (IOException e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Loading Parameter Dialog", e.toString());
         }
+    }
+
+    /**
+     * @return TRUE if the training file has data
+     */
+    private boolean isValidTraining() {
+        boolean retVal = false;
+        File trainFile = new File(this.modelDirectory, "training.tbl");
+        try (LineReader trainStream = new LineReader(trainFile)) {
+            // Skip the header.
+            trainStream.next();
+            // If there is at least one more record, we are ok.
+            if (trainStream.hasNext())
+                retVal = true;
+        } catch (IOException e) {
+            // Ignore the error.  An IO error means the training file is not ready.
+        }
+        return retVal;
     }
 
     /**
@@ -352,23 +372,6 @@ public class TrainingManager extends ResizableController implements ITrainReport
     }
 
     /**
-     * Button event to compute mean bias.
-     *
-     * @param event		event descriptor
-     */
-    @FXML
-    private void showMeanBias(ActionEvent event) {
-        try {
-            Stage biasStage = new Stage();
-            MeanBiasDialog biasDialog = (MeanBiasDialog) BaseController.loadFXML("MeanBiasDialog", biasStage);
-            biasDialog.init(this.modelDirectory);
-            biasStage.showAndWait();
-        } catch (Exception e) {
-            BaseController.messageBox(Alert.AlertType.ERROR, "Error Computing Mean Bias", e.toString());
-        }
-    }
-
-    /**
      * Button event to make predictions.
      *
      * @param event		event descriptor
@@ -380,6 +383,10 @@ public class TrainingManager extends ResizableController implements ITrainReport
             PredictDialog predictDialog = (PredictDialog) BaseController.loadFXML("PredictDialog", predictStage);
             predictDialog.init(this.modelDirectory, this.modelType);
             predictStage.showAndWait();
+            // Check for a join request.
+            File joinFile = predictDialog.isJoinRequested();
+            if (joinFile != null)
+                this.invokeJoinDialog(joinFile);
         } catch (Exception e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Making Predictions", e.toString());
         }
@@ -393,13 +400,24 @@ public class TrainingManager extends ResizableController implements ITrainReport
     @FXML
     private void showJoinDialog(ActionEvent event) {
         try {
-            Stage joinStage = new Stage();
-            JoinDialog joinDialog = (JoinDialog) BaseController.loadFXML("/org/theseed/join/JoinDialog", joinStage);
-            joinDialog.init(this.modelDirectory);
-            joinStage.showAndWait();
+            invokeJoinDialog(null);
         } catch (Exception e) {
             BaseController.messageBox(Alert.AlertType.ERROR, "Error Joining Files", e.toString());
         }
+    }
+
+    /**
+     * Invoke the join dialog.
+     *
+     * @param initFile	initial input file, or NULL if none
+     *
+     * @throws IOException
+     */
+    private void invokeJoinDialog(File initFile) throws IOException {
+        Stage joinStage = new Stage();
+        JoinDialog joinDialog = (JoinDialog) BaseController.loadFXML("/org/theseed/join/JoinDialog", joinStage);
+        joinDialog.init(this.modelDirectory, initFile);
+        joinStage.showAndWait();
     }
 
     /**
@@ -466,6 +484,9 @@ public class TrainingManager extends ResizableController implements ITrainReport
             // Now we need to determine what type of model this is.
             File labelFile = new File(newDir, "labels.txt");
             File trainFile = new File(newDir, "training.tbl");
+            File dataFile = new File(newDir, "data.tbl");
+            if (dataFile.exists() && ! trainFile.exists())
+                this.createTrainingFile(trainFile, dataFile);
             if (labelFile.exists() && trainFile.exists()) {
                 this.modelDirectory = newDir;
                 this.modelFile = new File(newDir, "model.ser");
@@ -529,6 +550,24 @@ public class TrainingManager extends ResizableController implements ITrainReport
     }
 
     /**
+     * Create a training file from the first line of a data file.  All errors in here
+     * are quiesced.  If we can't do it, we assume the data file is not appropriate.
+     *
+     * @param trainFile		training file to create
+     * @param dataFile		data file whose header needs to be copied
+     */
+    private void createTrainingFile(File trainFile, File dataFile) {
+        try (LineReader dataLines = new LineReader(dataFile)) {
+            String headerLine = dataLines.next();
+            try (PrintWriter writer = new PrintWriter(trainFile)) {
+                writer.println(headerLine);
+            }
+        } catch (Exception e) {
+            log.info("Error trying to create training file from data file: " + e.toString());
+        }
+    }
+
+    /**
      * @return an array of metadata columns chosen by the user; the first is the ID and the last is the label column (if classifying)
      *
      * @param availableHeaders		list of available headers
@@ -552,8 +591,6 @@ public class TrainingManager extends ResizableController implements ITrainReport
         this.lblModelType.setText(this.modelType.getDescription());
         String caption = this.modelType.resultDescription();
         this.btnViewResults.setText(caption);
-        int hasClassLabel = this.modelType.metaLabel();
-        this.btnMeanBias.setVisible(hasClassLabel > 0);
     }
 
     /**
@@ -717,7 +754,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
     }
 
     /**
-     * Convert a classification input file to a balanced training file.
+     * Convert an input file to a balanced training file.
      *
      * @param event		event descriptor
      */

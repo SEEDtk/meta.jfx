@@ -26,7 +26,7 @@
       <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
          <children>
             <Button mnemonicParsing="false" onAction="#selectOutput" text="..." GridPane.columnIndex="2" />
-            <Button fx:id="btnDelete" mnemonicParsing="false" onAction="#deleteFile" text="X" textFill="RED">
+            <Button mnemonicParsing="false" onAction="#deleteFile" text="X" textFill="RED">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>

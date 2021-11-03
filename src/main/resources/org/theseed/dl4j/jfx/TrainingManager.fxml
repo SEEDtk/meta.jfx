@@ -72,7 +72,6 @@
             <Button fx:id="btnViewResults" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showModelResults" prefWidth="120.0" text="View Results" />
             <Button fx:id="btnConvert" mnemonicParsing="false" onAction="#convertInput" prefWidth="120.0" text="Convert Data" />
             <Button fx:id="btnTrainingView" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#viewTrainingFile" prefWidth="120.0" text="Show Training File" />
-            <Button fx:id="btnMeanBias" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showMeanBias" prefWidth="120.0" text="Mean Bias" />
             <Button fx:id="btnPredict" layoutX="530.0" layoutY="23.0" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#showPredict" prefWidth="120.0" text="Predict" />
             <Button mnemonicParsing="false" onAction="#showJoinDialog" prefWidth="120.0" text="Join Files" />
          </children>

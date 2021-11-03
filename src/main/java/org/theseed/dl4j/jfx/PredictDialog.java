@@ -20,12 +20,14 @@ import org.theseed.io.LineReader;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.MovableController;
+import org.theseed.join.JoinDialog;
 import org.theseed.utils.Parms;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -70,6 +72,10 @@ public class PredictDialog extends MovableController {
     /** button to start the process */
     @FXML
     private Button btnRun;
+
+    /** checkbox to request join dialog */
+    @FXML
+    private CheckBox chkJoinRequest;
 
 
 
@@ -147,7 +153,7 @@ public class PredictDialog extends MovableController {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Select Input File");
         chooser.setInitialDirectory(this.savedDirectory);
-        chooser.getExtensionFilters().addAll(MeanBiasDialog.TEXT_FILES,
+        chooser.getExtensionFilters().addAll(JoinDialog.FLAT_FILTER,
                 new ExtensionFilter("All Files", "*.*"));
         // Get the file.
         File retVal = chooser.showOpenDialog(this.getStage());
@@ -198,7 +204,7 @@ public class PredictDialog extends MovableController {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Select Prediction Output File");
         chooser.setInitialDirectory(this.savedDirectory);
-        chooser.getExtensionFilters().addAll(MeanBiasDialog.TEXT_FILES,
+        chooser.getExtensionFilters().addAll(JoinDialog.FLAT_FILTER,
                 new ExtensionFilter("All Files", "*.*"));
         // Get the file.
         File retVal = chooser.showSaveDialog(this.getStage());
@@ -229,6 +235,16 @@ public class PredictDialog extends MovableController {
      */
     private void configureButtons() {
         this.btnRun.setDisable(this.inputFile == null || this.outputFile == null);
+    }
+
+    /**
+     * @return the output file if the user wants to pass it to a join dialog, else NULL
+     */
+    public File isJoinRequested() {
+        File retVal = null;
+        if (this.chkJoinRequest.isSelected())
+            retVal = this.outputFile;
+        return retVal;
     }
 
 }
