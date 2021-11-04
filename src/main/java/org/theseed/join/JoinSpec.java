@@ -58,6 +58,12 @@ public class JoinSpec implements IJoinSpec {
     private JoinDialog parent;
     /** display node for this join specification */
     private Node node;
+    /** TRUE if the current file has too many columns  */
+    private boolean largeFileMode;
+    /** original array of headers from the input file */
+    private String[] headers;
+    /** maximum number of columns for normal processing */
+    private static final int MAX_COLUMNS = 300;
 
     // CONTROLS
 
@@ -88,6 +94,18 @@ public class JoinSpec implements IJoinSpec {
     /** combo box for join type */
     @FXML
     protected ChoiceBox<Type> cmbType;
+
+    /** button to select all columns */
+    @FXML
+    private Button allButton;
+
+    /** button to select no columns */
+    @FXML
+    private Button noneButton;
+
+    /** button to invert the column selection */
+    @FXML
+    private Button flipButton;
 
     public static enum Type {
         NATURALJOIN {
@@ -189,15 +207,34 @@ public class JoinSpec implements IJoinSpec {
         try (TabbedLineReader inStream = new TabbedLineReader(inputFile)) {
             if (inStream.size() < 1)
                 throw new IOException("Input file must contain at least one column.");
-            for (String header : inStream.getLabels()) {
-                keyColumn.add(header);
-                dataColumns.add(header);
+            // Save the file headers.
+            this.headers = inStream.getLabels();
+            if (inStream.size() > MAX_COLUMNS) {
+                // Here we have a large file situation.  The display controls will lock if we
+                // try to put all the columns in them.  We force the key column to be the
+                // first, and just auto-select all the data columns for processing.
+                this.largeFileMode = true;
+                keyColumn.add(inStream.getLabels()[0]);
+                BaseController.messageBox(AlertType.WARNING, "Large Input File",
+                        String.format("This file has %d columns and the maximum is %d.  Functionality will be limited.",
+                                inStream.size(), MAX_COLUMNS));
+            } else {
+                this.largeFileMode = false;
+                for (String header : this.headers) {
+                    keyColumn.add(header);
+                    dataColumns.add(header);
+                }
+                // Denote we want to include all columns.
+                this.lstColumns.getSelectionModel().selectAll();
             }
+            // Configure the list-related controls.
+            this.lstColumns.setDisable(this.largeFileMode);
+            this.allButton.setDisable(this.largeFileMode);
+            this.noneButton.setDisable(this.largeFileMode);
+            this.flipButton.setDisable(this.largeFileMode);
         }
         // Select the first column as the key.
         this.cmbKeyColumn.getSelectionModel().clearAndSelect(0);
-        // Denote we want to include all columns.
-        this.lstColumns.getSelectionModel().selectAll();
         // Save the file.
         this.inFile = inputFile;
         this.txtInputFile.setText(inputFile.getName());
@@ -310,8 +347,12 @@ public class JoinSpec implements IJoinSpec {
     public List<String> getHeaders() {
         // Get the key column name.  The key column is always excluded.
         String keyColumn = this.getKeyColumn();
-        // Get the list of column names from the column list.
-        List<String> retVal = this.lstColumns.getSelectionModel().getSelectedItems().stream().filter(x -> ! x.contentEquals(keyColumn)).collect(Collectors.toList());
+        // Get the list of column names to use.  This depends on whether or not we are in large-file mode.
+        List<String> retVal;
+        if (this.largeFileMode)
+            retVal = Arrays.stream(this.headers).filter(x -> ! x.contentEquals(keyColumn)).collect(Collectors.toList());
+        else
+            retVal = this.lstColumns.getSelectionModel().getSelectedItems().stream().filter(x -> ! x.contentEquals(keyColumn)).collect(Collectors.toList());
         return retVal;
     }
 

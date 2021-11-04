@@ -236,6 +236,8 @@ public class AnalyzeSpec implements IJoinSpec {
             // Do the classification analysis.
             newMap = this.processClassification(headers, numRecords, rowLabels, labelColIdx);
         }
+        // Update the counts in the table view.
+        this.tblLabels.refresh();
         // We must clone the new keyed map into the old one.
         keyedMap.shallowCopyFrom(newMap);
     }

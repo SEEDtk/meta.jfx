@@ -43,9 +43,9 @@
       <ListView fx:id="lstColumns" prefHeight="390.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
       <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="2" GridPane.rowIndex="4">
          <children>
-            <Button mnemonicParsing="false" onAction="#allColumns" prefWidth="75.0" text="All" />
-            <Button mnemonicParsing="false" onAction="#noColumns" prefWidth="75.0" text="None" />
-            <Button mnemonicParsing="false" onAction="#invertColumns" prefWidth="75.0" text="Invert" />
+            <Button fx:id="allButton" mnemonicParsing="false" onAction="#allColumns" prefWidth="75.0" text="All" />
+            <Button fx:id="noneButton" mnemonicParsing="false" onAction="#noColumns" prefWidth="75.0" text="None" />
+            <Button fx:id="flipButton" mnemonicParsing="false" onAction="#invertColumns" prefWidth="75.0" text="Invert" />
          </children>
       </VBox>
       <Label fx:id="lblTitle" text="File Join" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
