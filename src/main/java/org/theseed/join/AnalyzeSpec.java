@@ -236,12 +236,58 @@ public class AnalyzeSpec implements IJoinSpec {
             // Do the classification analysis.
             newMap = this.processClassification(headers, numRecords, rowLabels, labelColIdx);
         }
+        // Add the mean value of each column at the end.
+        this.computeMeans(headers, numRecords, newMap);
         // Update the counts in the table view.
         this.tblLabels.refresh();
         // We must clone the new keyed map into the old one.
         keyedMap.shallowCopyFrom(newMap);
     }
 
+
+    /**
+     * This method computes the mean value of each input file column and adds it to the output file
+     * as an additional column.  For a 1/0 input column, this will tell us fraction of times the
+     * column value is 1.  For others, it gives us an idea of the baseline value.
+     *
+     * @param header		header list containing the column names
+     * @param numRecords	list of input file records encoded as floating-point arrays
+     * @param newMap		output file map
+     */
+    private void computeMeans(List<String> headers, List<double[]> numRecords, KeyedFileMap newMap) {
+        newMap.addHeaders(Arrays.asList("col_mean"));
+        // We go through the header list and the keyed file map records in parallel. The file map
+        // records are a subset of the header elements in the same order.  Our position in the
+        // header list gives us the appropriate column index.  When we find a match, we compute
+        // the mean of the column and add it at the end of the output record.
+        int c = 1;
+        for (List<String> record : newMap.getRecords()) {
+            // Get the key of this record.
+            String key = record.get(0);
+            // Find the correct position in the headers.  If we fail, it will cause an index out-of-bounds
+            // exception, which we reframe to give the user more useful information.  It should, however,
+            // never happen.
+            try {
+                while (! headers.get(c).contentEquals(key)) c++;
+            } catch (IndexOutOfBoundsException e) {
+                throw new IllegalStateException("Column name \"" + key + "\" not found in headers or out of order.");
+            }
+            // Now "c" is the column index for this output record.  Compute the mean.
+            double total = 0.0;
+            int found = 0;
+            for (double[] numRecord : numRecords) {
+                if (Double.isFinite(numRecord[c])) {
+                    total += numRecord[c];
+                    found++;
+                }
+            }
+            if (found > 0)
+                total /= found;
+            // Add the mean to the output record.
+            record.add(Double.toString(total));
+        }
+
+    }
 
     /**
      * Compute the mean bias of each label for each data column in the incoming map.
