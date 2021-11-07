@@ -34,6 +34,7 @@ public class FileSpec extends JoinSpec {
         // scratch, not combining two maps.
         File inFile = this.getInFile();
         try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
+            int inCount = 0;
             // Get the key column name and index.
             String keyName = this.getKeyColumn();
             int keyIdx = inStream.findField(keyName);
@@ -53,7 +54,11 @@ public class FileSpec extends JoinSpec {
                 String key = line.get(keyIdx);
                 List<String> data = Arrays.stream(cols).mapToObj(i -> line.get(i)).collect(Collectors.toList());
                 keyedMap.addRecord(key, data);
+                inCount++;
             }
+            // Display the result message.
+            this.txtMessage.setText(String.format("%d input records, %d duplicate keys.",
+                    inCount, keyedMap.getDupCount()));
         }
     }
 

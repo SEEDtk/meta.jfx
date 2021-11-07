@@ -13,7 +13,8 @@
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="350.0" />
+      <RowConstraints minHeight="10.0" prefHeight="300.0" />
+      <RowConstraints minHeight="10.0" prefHeight="50.0" />
    </rowConstraints>
    <columnConstraints>
       <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
@@ -40,7 +41,7 @@
             <Insets top="10.0" />
          </padding>
       </Label>
-      <ListView fx:id="lstColumns" prefHeight="390.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <ListView fx:id="lstColumns" prefHeight="300.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
       <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="2" GridPane.rowIndex="4">
          <children>
             <Button fx:id="allButton" mnemonicParsing="false" onAction="#allColumns" prefWidth="75.0" text="All" />
@@ -52,5 +53,6 @@
       <Label text="Column Qualifier" GridPane.rowIndex="3" />
       <TextField fx:id="txtQualifier" GridPane.columnIndex="1" GridPane.rowIndex="3" />
       <ChoiceBox fx:id="cmbType" prefWidth="150.0" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+      <TextArea fx:id="txtMessage" editable="false" prefHeight="50.0" prefWidth="200.0" styleClass="readOnly" stylesheets="@mods.css" wrapText="true" GridPane.columnSpan="3" GridPane.rowIndex="5" />
    </children>
 </GridPane>

@@ -35,6 +35,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
 /**
@@ -106,6 +107,10 @@ public class JoinSpec implements IJoinSpec {
     /** button to invert the column selection */
     @FXML
     private Button flipButton;
+
+    /** output area for messages */
+    @FXML
+    protected TextArea txtMessage;
 
     public static enum Type {
         NATURALJOIN {
@@ -411,6 +416,9 @@ public class JoinSpec implements IJoinSpec {
 
     @Override
     public void apply(KeyedFileMap keyedMap) throws IOException {
+        // Clear the counters.
+        int leftCount = 0;
+        int rightDups = 0;
         // Get the join type.
         Type joinType = this.cmbType.getValue();
         // Here we need to read the input file and extract the key column and the data columns.
@@ -436,6 +444,8 @@ public class JoinSpec implements IJoinSpec {
             for (TabbedLineReader.Line line : inStream) {
                 String key = line.get(keyIdx);
                 List<String> data = Arrays.stream(cols).mapToObj(i -> line.get(i)).collect(Collectors.toList());
+                if (inputMap.containsKey(key))
+                    rightDups++;
                 inputMap.put(key, data);
             }
             // Now we iterate through the output map and apply the keyed map.
@@ -449,11 +459,17 @@ public class JoinSpec implements IJoinSpec {
                 if (newRecord == null) {
                     // No, do special processing.
                     joinType.processMissing(iter, data, headers.size());
+                    leftCount++;
                 } else {
                     // Yes, add the input columns.
                     data.addAll(newRecord);
+                    // Remove the key from the input map.
+                    inputMap.remove(key);
                 }
             }
+            // Update the message display with the stats.
+            this.txtMessage.setText(String.format("%d unmatched left keys, %d unmatched right keys, %d duplicates in new file.",
+                    leftCount, inputMap.size(), rightDups));
         }
     }
 
