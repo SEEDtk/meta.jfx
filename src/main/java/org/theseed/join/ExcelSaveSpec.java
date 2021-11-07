@@ -3,6 +3,7 @@
  */
 package org.theseed.join;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.io.KeyedFileMap;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
@@ -72,6 +74,10 @@ public class ExcelSaveSpec extends SaveSpec {
     @FXML
     private Label lblPrecision;
 
+    /** checkbox for append mode */
+    @FXML
+    private CheckBox chkAppend;
+
 
     /**
      * This is called when the precision slider changes.  We use it to update
@@ -86,7 +92,7 @@ public class ExcelSaveSpec extends SaveSpec {
 
     @Override
     public boolean isValid() {
-        return (this.getOutFile() != null && ! this.txtSheetName.getText().isBlank());
+        return (this.getOutFile() != null && ! this.txtSheetName.getText().isBlank() && (! chkAppend.isSelected() || this.getOutFile().exists()));
     }
 
     @Override
@@ -96,10 +102,25 @@ public class ExcelSaveSpec extends SaveSpec {
         // Get the number of records.
         int rows = keyedMap.size();
         // Now we build the workbook.
-        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            // Create a new sheet to hold our output.
+        try (XSSFWorkbook workbook = this.getWorkbook()) {
+            // Get the sheet to hold our output.
             String sheetName = this.txtSheetName.getText();
-            XSSFSheet newSheet = (XSSFSheet) workbook.createSheet(sheetName);
+            XSSFSheet newSheet = workbook.getSheet(sheetName);
+            if (newSheet == null) {
+                // Here we have to create the sheet.  This is the normal case.
+                newSheet = (XSSFSheet) workbook.createSheet(sheetName);
+            } else {
+                // Here the sheet exists, and we have to erase the old content.  If
+                // there are multiple sheets, we delete and re-create.
+                if (workbook.getNumberOfSheets() > 1) {
+                    int idx = workbook.getSheetIndex(newSheet);
+                    workbook.removeSheetAt(idx);
+                    newSheet = (XSSFSheet) workbook.createSheet(sheetName);
+                } else {
+                    // Here we hit a limitation of the Apache POI.
+                    throw new IOException("Cannot replace a sheet in a single-sheet workbook.  Please choose a new sheet name.");
+                }
+            }
             // Create the special formatting styles.
             DataFormat format = workbook.createDataFormat();
             short intFmt = format.getFormat("##0");
@@ -194,8 +215,11 @@ public class ExcelSaveSpec extends SaveSpec {
             // Set filtering in the top row and name the range.
             CellRangeAddress tableRange = new CellRangeAddress(0, rows, 0, headers.size() - 1);
             newSheet.setAutoFilter(tableRange);
-            XSSFName tableName = workbook.createName();
-            tableName.setNameName(sheetName);
+            XSSFName tableName = workbook.getName(sheetName);
+            if (tableName == null) {
+                tableName = workbook.createName();
+                tableName.setNameName(sheetName);
+            }
             String tableRangeAddress = tableRange.formatAsString(sheetName, true);
             tableName.setRefersToFormula(tableRangeAddress);
             // Now write the table out.
@@ -204,6 +228,24 @@ public class ExcelSaveSpec extends SaveSpec {
             }
             this.checkForOpen();
         }
+    }
+
+    /**
+     * @return the user-specified workbook
+     *
+     * @throws IOException
+
+     */
+    private XSSFWorkbook getWorkbook() throws IOException {
+        XSSFWorkbook retVal;
+        if (this.chkAppend.isSelected()) {
+            try (FileInputStream inStream = new FileInputStream(this.getOutFile())){
+                retVal = new XSSFWorkbook(inStream);
+            }
+        } else {
+            retVal = new XSSFWorkbook();
+        }
+        return retVal;
     }
 
     /**
