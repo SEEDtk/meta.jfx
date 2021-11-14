@@ -6,7 +6,7 @@ package org.theseed.join;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.theseed.test.Matchers.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Bruce Parrello

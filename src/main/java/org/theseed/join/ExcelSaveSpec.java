@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -23,6 +24,9 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFCreationHelper;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.apache.poi.xssf.usermodel.XSSFName;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -59,6 +63,8 @@ public class ExcelSaveSpec extends SaveSpec {
     private static final short HEAD_COLOR = IndexedColors.INDIGO.getIndex();
     /** color to use for data */
     private static final XSSFColor BAND_COLOR = new XSSFColor(new byte[] { (byte) 0xDD, (byte) 0xEE, (byte) 0xFF }, null);
+    /** format for creating a pubmed link */
+    private static final String PUBMED_FORMAT = "https://pubmed.ncbi.nlm.nih.gov/%s";
 
     // CONTROLS
 
@@ -77,6 +83,10 @@ public class ExcelSaveSpec extends SaveSpec {
     /** checkbox for append mode */
     @FXML
     private CheckBox chkAppend;
+
+    /** checkbox for pubmed linking */
+    @FXML
+    private CheckBox chkPubmed;
 
 
     /**
@@ -146,13 +156,28 @@ public class ExcelSaveSpec extends SaveSpec {
             XSSFCellStyle cellStyle = workbook.createCellStyle();
             cellStyle.setAlignment(HorizontalAlignment.LEFT);
             this.shadeCell(cellStyle);
+            XSSFCellStyle hlinkStyle = workbook.createCellStyle();
+            XSSFFont hlinkfont = workbook.createFont();
+            hlinkfont.setUnderline(XSSFFont.U_SINGLE);
+            hlinkfont.setColor(HEAD_COLOR);
+            hlinkStyle.setFont(hlinkfont);
+            this.shadeCell(hlinkStyle);
+            // This will track the pubmed column.
+            int pubmed = -1;
             // Create the header row.
             XSSFRow row = newSheet.createRow(0);
             for (int c = 0; c < headers.size(); c++) {
                 XSSFCell cell = row.createCell(c, CellType.STRING);
                 cell.setCellValue(headers.get(c));
                 cell.setCellStyle(headStyle);
+                if (headers.get(c).contentEquals("pubmed"))
+                    pubmed = c;
             }
+            // Set up access to the hyperlinks.
+            XSSFCreationHelper linkHelper = workbook.getCreationHelper();
+            // If the pubmed box is unchecked, suppress the pubmed linking.
+            if (! this.chkPubmed.isSelected())
+                pubmed = -1;
             // Next, we fill in the cell values.  We also track how many numbers are in each
             // column.
             int[] intCounts = new int[headers.size()];
@@ -168,7 +193,22 @@ public class ExcelSaveSpec extends SaveSpec {
                     // Here we determine the cell type.  The key (c == 0) is always a string.
                     if (datum.isBlank())
                         cell = row.createCell(c, CellType.BLANK);
-                    else if (c >= 1 && DOUBLE_PATTERN.matcher(datum).matches()) {
+                    else if (c == pubmed) {
+                        // Here we have the pubmed column.  The data is counted as a string
+                        // no matter what.  If it is an integer, we hyperlink it.
+                        if (INTEGER_PATTERN.matcher(datum).matches()) {
+                            cell = row.createCell(c, CellType.NUMERIC);
+                            cell.setCellValue(Integer.parseInt(datum));
+                            XSSFHyperlink link = linkHelper.createHyperlink(HyperlinkType.URL);
+                            link.setAddress(String.format(PUBMED_FORMAT, datum));
+                            cell.setHyperlink(link);
+                        } else {
+                            cell = row.createCell(c, CellType.STRING);
+                            cell.setCellValue(datum);
+                        }
+                        // A pubmed is always treated as a string.
+                        stringCounts[c]++;
+                    } else if (c >= 1 && DOUBLE_PATTERN.matcher(datum).matches()) {
                         cell = row.createCell(c, CellType.NUMERIC);
                         cell.setCellValue(Double.parseDouble(datum));
                         // Count the cell type.  If the column is all integers we use a different
@@ -193,7 +233,9 @@ public class ExcelSaveSpec extends SaveSpec {
             for (int c = 0; c < headers.size(); c++) {
                 // Here we figure out the column format.  The basic formats are integer,
                 // floating, flag, and text.
-                if (stringCounts[c] == 0) {
+                if (c == pubmed)
+                    this.formatPubmedColumn(newSheet, hlinkStyle, cellStyle, c, rows);
+                else if (stringCounts[c] == 0) {
                     // Here we are all numbers.  We use the integer style if we are all integers.
                     if (intCounts[c] >= numCounts[c])
                         this.formatColumn(newSheet, intStyle, c, rows);
@@ -276,6 +318,26 @@ public class ExcelSaveSpec extends SaveSpec {
         for (int r = 1; r <= rows; r++) {
             XSSFCell cell = sheet.getRow(r).getCell(c);
             cell.setCellStyle(format);
+        }
+    }
+
+    /**
+     * Apply proper formatting to a pubmed column.
+     *
+     * @param sheet			sheet containing the table
+     * @param linkFormat	format for link cells
+     * @param normFormat	format for other cells
+     * @param c				column index
+     * @param rows			number of data rows.
+     */
+    private void formatPubmedColumn(XSSFSheet sheet, CellStyle linkFormat, CellStyle normFormat,
+            int c, int rows) {
+        for (int r = 1; r <= rows; r++) {
+            XSSFCell cell = sheet.getRow(r).getCell(c);
+            if (cell.getCellType() == CellType.NUMERIC)
+                cell.setCellStyle(linkFormat);
+            else
+                cell.setCellStyle(normFormat);
         }
     }
 
