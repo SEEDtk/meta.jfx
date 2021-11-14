@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.io.KeyedFileMap;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -87,6 +88,10 @@ public class ExcelSaveSpec extends SaveSpec {
     /** checkbox for pubmed linking */
     @FXML
     private CheckBox chkPubmed;
+
+    /** column name for pubmed linking */
+    @FXML
+    private TextField txtPubmed;
 
 
     /**
@@ -164,20 +169,22 @@ public class ExcelSaveSpec extends SaveSpec {
             this.shadeCell(hlinkStyle);
             // This will track the pubmed column.
             int pubmed = -1;
+            // This is used to identify the pubmed column.  If we aren't linking,
+            // we pick a column heading that won't match anything.
+            String pubmedCol = this.txtPubmed.getText();
+            if (! this.chkPubmed.isSelected())
+                pubmedCol = null;
             // Create the header row.
             XSSFRow row = newSheet.createRow(0);
             for (int c = 0; c < headers.size(); c++) {
                 XSSFCell cell = row.createCell(c, CellType.STRING);
                 cell.setCellValue(headers.get(c));
                 cell.setCellStyle(headStyle);
-                if (headers.get(c).contentEquals("pubmed"))
+                if (headers.get(c).equalsIgnoreCase(pubmedCol))
                     pubmed = c;
             }
             // Set up access to the hyperlinks.
             XSSFCreationHelper linkHelper = workbook.getCreationHelper();
-            // If the pubmed box is unchecked, suppress the pubmed linking.
-            if (! this.chkPubmed.isSelected())
-                pubmed = -1;
             // Next, we fill in the cell values.  We also track how many numbers are in each
             // column.
             int[] intCounts = new int[headers.size()];
@@ -273,10 +280,20 @@ public class ExcelSaveSpec extends SaveSpec {
     }
 
     /**
+     * Enable or disable the pubmed column name textbox depending on the state of
+     * the checkbox.
+     *
+     * @param event		event for the checkbox toggle
+     */
+    @FXML
+    public void togglePubmedBox(ActionEvent event) {
+        this.txtPubmed.setDisable(! this.chkPubmed.isSelected());
+    }
+
+    /**
      * @return the user-specified workbook
      *
      * @throws IOException
-
      */
     private XSSFWorkbook getWorkbook() throws IOException {
         XSSFWorkbook retVal;

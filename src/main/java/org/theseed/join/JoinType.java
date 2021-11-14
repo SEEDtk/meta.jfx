@@ -35,6 +35,22 @@ public enum JoinType {
             return "Input File";
         }
 
+    }, ANALYZE {
+        @Override
+        protected IJoinSpec createController() {
+            return new AnalyzeSpec();
+        }
+
+        @Override
+        protected String getFxml() {
+            return "AnalyzeSpec.fxml";
+        }
+
+        @Override
+        public String toString() {
+            return "Analyze Column Bias";
+        }
+
     }, FILTER {
         @Override
         protected IJoinSpec createController() {
@@ -97,22 +113,6 @@ public enum JoinType {
         @Override
         public String toString() {
             return "Save to Flat File";
-        }
-
-    }, ANALYZE {
-        @Override
-        protected IJoinSpec createController() {
-            return new AnalyzeSpec();
-        }
-
-        @Override
-        protected String getFxml() {
-            return "AnalyzeSpec.fxml";
-        }
-
-        @Override
-        public String toString() {
-            return "Analyze Column Bias";
         }
 
     };

@@ -5,10 +5,13 @@ package org.theseed.join;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,8 +72,9 @@ public class FilterSpec implements IJoinSpec {
             }
 
             @Override
-            public boolean keep(String key, Set<String> inputKeys) {
-                return inputKeys.contains(key);
+            public void apply(FilterSpec parent, KeyedFileMap outputMap) throws IOException {
+                parent.applyFilter(outputMap, true);
+
             }
 
         }, EXCLUDE {
@@ -80,8 +84,19 @@ public class FilterSpec implements IJoinSpec {
             }
 
             @Override
-            public boolean keep(String key, Set<String> inputKeys) {
-                return ! inputKeys.contains(key);
+            public void apply(FilterSpec parent, KeyedFileMap outputMap) throws IOException {
+                parent.applyFilter(outputMap, false);
+            }
+
+        }, MERGE {
+            @Override
+            public String toString() {
+                return "merge";
+            }
+
+            @Override
+            public void apply(FilterSpec parent, KeyedFileMap outputMap) throws IOException {
+                parent.applyMerge(outputMap);
             }
 
         };
@@ -92,9 +107,14 @@ public class FilterSpec implements IJoinSpec {
         public abstract String toString();
 
         /**
-         * @return TRUE to keep this key, else FALSE
+         * Apply this filter to the output map.
+         *
+         * @param parent		parent filter-spec object
+         * @param outputMap		output map to filter
+         *
+         * @throws IOException
          */
-        public abstract boolean keep(String key, Set<String> inputKeys);
+        public abstract void apply(FilterSpec parent, KeyedFileMap outputMap) throws IOException;
 
     }
 
@@ -183,6 +203,58 @@ public class FilterSpec implements IJoinSpec {
     public void apply(KeyedFileMap outputMap) throws IOException {
         // Get the filtering type.
         Type filterType = this.cmbType.getValue();
+        // Apply the filter.
+        filterType.apply(this, outputMap);
+    }
+
+    /**
+     * Merge the files.  The columns are reduced to the columns both files have
+     * in common.  The input records are then added to the output map.  If a
+     * key already exists in the output map, its record will be replaced with
+     * the new data.
+     *
+     * @param outputMap		output map being build
+     *
+     * @throws IOException
+     */
+    private void applyMerge(KeyedFileMap outputMap) throws IOException {
+        // Get the input file.
+        try (TabbedLineReader inStream = new TabbedLineReader(this.inFile)) {
+            // Get all the data columns in the input file.
+            String keyCol = this.cmbKeyColumn.getValue();
+            Set<String> newHeaders = Arrays.stream(inStream.getLabels())
+                    .filter(x -> ! x.contentEquals(keyCol)).collect(Collectors.toSet());
+            // Remove other columns from the output map.
+            outputMap.reduceCols(newHeaders);
+            // Get the new list of headers.
+            List<String> outHeaders = outputMap.getHeaders();
+            // Get the index of the key column in the input file.
+            int keyIdx = inStream.findColumn(keyCol);
+            // Compute the indices of the data columns.
+            int[] dataCols = IntStream.range(1, outHeaders.size())
+                    .map(i -> inStream.findColumn(outHeaders.get(i)))
+                    .toArray();
+            // Now we loop through the input file, adding records.
+            for (TabbedLineReader.Line line : inStream) {
+                String key = line.get(keyIdx);
+                List<String> data = Arrays.stream(dataCols).mapToObj(i -> line.get(i))
+                        .collect(Collectors.toList());
+                outputMap.addRecord(key, data);
+            }
+        }
+    }
+
+    /**
+     * Apply normal filtering.  In this case, the keys in the output map are
+     * compared with the keys in the input file and the output map records are
+     * either kept or discarded.
+     *
+     * @param outputMap		output map being build
+     * @param type			TRUE to keep only matching records, FALSE to remove them instead
+     *
+     * @throws IOException
+     */
+    private void applyFilter(KeyedFileMap outputMap, boolean type) throws IOException {
         // Get the set of keys in this input file.
         String keyColumn = this.cmbKeyColumn.getValue();
         Set<String> keys = TabbedLineReader.readSet(this.inFile, keyColumn);
@@ -190,7 +262,7 @@ public class FilterSpec implements IJoinSpec {
         Iterator<Map.Entry<String, List<String>>> iter = outputMap.iterator();
         while (iter.hasNext()) {
             String key = iter.next().getKey();
-            if (! filterType.keep(key, keys))
+            if (keys.contains(key) != type)
                 iter.remove();
         }
     }

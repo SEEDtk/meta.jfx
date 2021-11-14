@@ -51,6 +51,8 @@
          </GridPane.margin>
       </Label>
       <CheckBox fx:id="chkAppend" mnemonicParsing="false" text="Append to Existing" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-      <CheckBox fx:id="chkPubmed" mnemonicParsing="false" text="Link pubmed column (if any)" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+      <CheckBox fx:id="chkPubmed" mnemonicParsing="false" onAction="#togglePubmedBox" GridPane.columnIndex="2" GridPane.rowIndex="6" />
+      <Label text="Link to Pubmed" GridPane.rowIndex="6" />
+      <TextField fx:id="txtPubmed" disable="true" text="pubmed" GridPane.columnIndex="1" GridPane.rowIndex="6" />
    </children>
 </GridPane>
