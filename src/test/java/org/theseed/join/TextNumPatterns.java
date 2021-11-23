@@ -21,16 +21,16 @@ public class TextNumPatterns {
         String[] ints = new String[] { "1", "-2", "+34567" };
         String[] bads = new String[] { "1+2", "345.6.7", "8.4+1" };
         for (String fString : floats) {
-            assertThat(fString, ExcelSaveSpec.DOUBLE_PATTERN.matcher(fString).matches(), isTrue());
-            assertThat(fString, ExcelSaveSpec.INTEGER_PATTERN.matcher(fString).matches(), isFalse());
+            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), isTrue());
+            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), isFalse());
         }
         for (String fString : ints) {
-            assertThat(fString, ExcelSaveSpec.DOUBLE_PATTERN.matcher(fString).matches(), isTrue());
-            assertThat(fString, ExcelSaveSpec.INTEGER_PATTERN.matcher(fString).matches(), isTrue());
+            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), isTrue());
+            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), isTrue());
         }
         for (String fString : bads) {
-            assertThat(fString, ExcelSaveSpec.DOUBLE_PATTERN.matcher(fString).matches(), isFalse());
-            assertThat(fString, ExcelSaveSpec.INTEGER_PATTERN.matcher(fString).matches(), isFalse());
+            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), isFalse());
+            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), isFalse());
         }
 
     }

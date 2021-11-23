@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.common.usermodel.HyperlinkType;
@@ -56,16 +55,12 @@ public class ExcelSaveSpec extends SaveSpec {
     protected static Logger log = LoggerFactory.getLogger(ExcelSaveSpec.class);
     /** number format precision */
     private int precision;
-    /** integer data type pattern */
-    protected static final Pattern INTEGER_PATTERN = Pattern.compile("\\s*[\\-+]?\\d+");
-    /** double data type pattern */
-    protected static final Pattern DOUBLE_PATTERN = KeyedFileMap.DOUBLE_PATTERN;
     /** color to use for header */
     private static final short HEAD_COLOR = IndexedColors.INDIGO.getIndex();
     /** color to use for data */
     private static final XSSFColor BAND_COLOR = new XSSFColor(new byte[] { (byte) 0xDD, (byte) 0xEE, (byte) 0xFF }, null);
     /** format for creating a pubmed link */
-    private static final String PUBMED_FORMAT = "https://pubmed.ncbi.nlm.nih.gov/%s";
+    protected static final String PUBMED_FORMAT = "https://pubmed.ncbi.nlm.nih.gov/%s";
 
     // CONTROLS
 
@@ -168,25 +163,28 @@ public class ExcelSaveSpec extends SaveSpec {
             hlinkStyle.setFont(hlinkfont);
             this.shadeCell(hlinkStyle);
             // This will track the pubmed column.
-            int pubmed = -1;
-            // This is used to identify the pubmed column.  If we aren't linking,
-            // we pick a column heading that won't match anything.
-            String pubmedCol = this.txtPubmed.getText();
+            int pubmed;
             if (! this.chkPubmed.isSelected())
-                pubmedCol = null;
+                pubmed = -1;
+            else {
+                pubmed = keyedMap.findColumn(this.txtPubmed.getText());
+                if (pubmed == -1)
+                    throw new IOException("Pubmed column not found.");
+            }
             // Create the header row.
             XSSFRow row = newSheet.createRow(0);
             for (int c = 0; c < headers.size(); c++) {
                 XSSFCell cell = row.createCell(c, CellType.STRING);
                 cell.setCellValue(headers.get(c));
                 cell.setCellStyle(headStyle);
-                if (headers.get(c).equalsIgnoreCase(pubmedCol))
-                    pubmed = c;
             }
             // Set up access to the hyperlinks.
             XSSFCreationHelper linkHelper = workbook.getCreationHelper();
             // Next, we fill in the cell values.  We also track how many numbers are in each
-            // column.
+            // column.  Note that we aren't using the full-blown ColumnData facility here,
+            // since we need to know the string type to format the individual cells regardless
+            // of what the entire column looks like, thanks to Excel being nutty about text
+            // that looks like numbers.
             int[] intCounts = new int[headers.size()];
             int[] numCounts = new int[headers.size()];
             int[] stringCounts = new int[headers.size()];
@@ -203,7 +201,7 @@ public class ExcelSaveSpec extends SaveSpec {
                     else if (c == pubmed) {
                         // Here we have the pubmed column.  The data is counted as a string
                         // no matter what.  If it is an integer, we hyperlink it.
-                        if (INTEGER_PATTERN.matcher(datum).matches()) {
+                        if (ColumnData.INTEGER_PATTERN.matcher(datum).matches()) {
                             cell = row.createCell(c, CellType.NUMERIC);
                             cell.setCellValue(Integer.parseInt(datum));
                             XSSFHyperlink link = linkHelper.createHyperlink(HyperlinkType.URL);
@@ -215,12 +213,12 @@ public class ExcelSaveSpec extends SaveSpec {
                         }
                         // A pubmed is always treated as a string.
                         stringCounts[c]++;
-                    } else if (c >= 1 && DOUBLE_PATTERN.matcher(datum).matches()) {
+                    } else if (c >= 1 && ColumnData.DOUBLE_PATTERN.matcher(datum).matches()) {
                         cell = row.createCell(c, CellType.NUMERIC);
                         cell.setCellValue(Double.parseDouble(datum));
                         // Count the cell type.  If the column is all integers we use a different
                         // format.
-                        if (INTEGER_PATTERN.matcher(datum).matches())
+                        if (ColumnData.INTEGER_PATTERN.matcher(datum).matches())
                             intCounts[c]++;
                         numCounts[c]++;
                     } else {

@@ -64,6 +64,10 @@ public class FilterSpec implements IJoinSpec {
     @FXML
     private ChoiceBox<Type> cmbType;
 
+    /** stats message area */
+    @FXML
+    private TextField txtMessage;
+
     public static enum Type {
         INCLUDE {
             @Override
@@ -224,6 +228,12 @@ public class FilterSpec implements IJoinSpec {
             String keyCol = this.cmbKeyColumn.getValue();
             Set<String> newHeaders = Arrays.stream(inStream.getLabels())
                     .filter(x -> ! x.contentEquals(keyCol)).collect(Collectors.toSet());
+            // Save the current width and duplicate-key count.  We'll use these
+            // in our statistics report.
+            int oldWidth = outputMap.width();
+            int oldDups = outputMap.getDupCount();
+            // Count the number of records added.
+            int newRecords = 0;
             // Remove other columns from the output map.
             outputMap.reduceCols(newHeaders);
             // Get the new list of headers.
@@ -239,8 +249,13 @@ public class FilterSpec implements IJoinSpec {
                 String key = line.get(keyIdx);
                 List<String> data = Arrays.stream(dataCols).mapToObj(i -> line.get(i))
                         .collect(Collectors.toList());
+                newRecords++;
                 outputMap.addRecord(key, data);
             }
+            // Output the statistics.
+            int replacements = outputMap.getDupCount() - oldDups;
+            this.txtMessage.setText(String.format("%d columns removed, %d records added, %d replaced.",
+                    oldWidth - outputMap.width(), newRecords - replacements, replacements));
         }
     }
 
@@ -258,6 +273,8 @@ public class FilterSpec implements IJoinSpec {
         // Get the set of keys in this input file.
         String keyColumn = this.cmbKeyColumn.getValue();
         Set<String> keys = TabbedLineReader.readSet(this.inFile, keyColumn);
+        // Remember the initial file size.
+        int initial = outputMap.size();
         // Loop through the output map, checking each record against the set.
         Iterator<Map.Entry<String, List<String>>> iter = outputMap.iterator();
         while (iter.hasNext()) {
@@ -265,6 +282,9 @@ public class FilterSpec implements IJoinSpec {
             if (keys.contains(key) != type)
                 iter.remove();
         }
+        // Write the status.
+        this.txtMessage.setText(String.format("%d keys in filter file.  %d records kept, %d deleted.",
+                keys.size(), outputMap.size(), initial - outputMap.size()));
     }
 
     @Override

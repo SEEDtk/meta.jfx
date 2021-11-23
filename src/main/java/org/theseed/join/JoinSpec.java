@@ -8,12 +8,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -40,10 +42,8 @@ import javafx.scene.control.TextField;
 
 /**
  * This control group represents the data for a single file in a join operation.  It allows specification of
- * the file name, the key column, the columns to keep, and a checkbox indicating that the desired operation is
- * a negative filtering instead of a join.  (Positive filtering is a join with all the columns turned off.)
- * For the first file, the negative filtering option will be suppressed.  When a file is first specified, all the
- * columns will be pre-selected.
+ * the file name, the key column, the columns to keep, and a choice box indicating whether the join is
+ * left-oriented or natural.  When a file is first specified, all the columns will be pre-selected.
  *
  * @author Bruce Parrello
  *
@@ -120,9 +120,14 @@ public class JoinSpec implements IJoinSpec {
             }
 
             @Override
-            protected void processMissing(Iterator<Entry<String, List<String>>> iter, List<String> data, int size) {
+            protected void processMissing(Iterator<Map.Entry<String, List<String>>> iter, List<String> data, int size) {
                 // For a natural join, missing values are removed from the output.
                 iter.remove();
+            }
+
+            @Override
+            protected void process(JoinSpec joinSpec, KeyedFileMap outputMap) throws IOException {
+                joinSpec.processJoin(outputMap);
             }
 
         }, LEFTJOIN {
@@ -132,10 +137,32 @@ public class JoinSpec implements IJoinSpec {
             }
 
             @Override
-            protected void processMissing(Iterator<Entry<String, List<String>>> iter, List<String> data, int size) {
+            protected void processMissing(Iterator<Map.Entry<String, List<String>>> iter, List<String> data, int size) {
                 // For a left join, the missing key's new fields are filled with empty strings.
                 for (int i = 0; i < size; i++)
                     data.add("");
+            }
+
+            @Override
+            protected void process(JoinSpec joinSpec, KeyedFileMap outputMap) throws IOException {
+                joinSpec.processJoin(outputMap);
+            }
+
+        }, LINKFILES {
+
+            @Override
+            public String toString() {
+                return "Link";
+            }
+
+            @Override
+            protected void processMissing(Iterator<Entry<String, List<String>>> iter, List<String> data, int size) {
+                // This is currently not used by the link process.
+            }
+
+            @Override
+            protected void process(JoinSpec joinSpec, KeyedFileMap outputMap) throws IOException {
+                joinSpec.processLink(outputMap);
             }
 
         };
@@ -146,14 +173,24 @@ public class JoinSpec implements IJoinSpec {
         public abstract String toString();
 
         /**
-         * Process a missing line.  The line's key is in the incoming output map, but new the new
-         * file's input map.
+         * Process a missing line for a real join.  The line's key is in the incoming output
+         * map, but not the new file's input map.
          *
          * @param iter		iterator through the output map
          * @param data		current record in the output map
          * @param size		width of the new file's data
          */
-        protected abstract void processMissing(Iterator<Entry<String, List<String>>> iter, List<String> data, int size);
+        protected abstract void processMissing(Iterator<Map.Entry<String, List<String>>> iter, List<String> data, int size);
+
+        /**
+         * Perform the join.
+         *
+         * @param joinSpec		parent join spec that will execute the join
+         * @param keyedFileMap	incoming file map
+         *
+         * @throws IOException
+         */
+        protected abstract void process(JoinSpec joinSpec, KeyedFileMap outputMap) throws IOException;
     }
 
    /**
@@ -416,6 +453,20 @@ public class JoinSpec implements IJoinSpec {
 
     @Override
     public void apply(KeyedFileMap keyedMap) throws IOException {
+        // Get the join type.
+        Type joinType = this.cmbType.getValue();
+        // Process the appropriate join.
+        joinType.process(this, keyedMap);
+    }
+
+    /**
+     * Perform one of the key-based joins.
+     *
+     * @param keyedMap		incoming file map from the left
+     *
+     * @throws IOException
+     */
+    private void processJoin(KeyedFileMap keyedMap) throws IOException {
         // Clear the counters.
         int leftCount = 0;
         int rightDups = 0;
@@ -471,6 +522,58 @@ public class JoinSpec implements IJoinSpec {
             this.txtMessage.setText(String.format("%d unmatched left keys, %d unmatched right keys, %d duplicates in new file.",
                     leftCount, inputMap.size(), rightDups));
         }
+    }
+
+    /**
+     * Link two files together using a common internal field rather than the key.  We
+     * will organize the input file by the specified key, then locate that field in the
+     * incoming output map.  This field, rather than the main key, will be used to find the
+     * input-file records matching the left file's records.
+     *
+     * @param outputMap		incoming file map from the left
+     * @throws IOException
+     */
+    protected void processLink(KeyedFileMap outputMap) throws IOException {
+        // Get the key-column name.
+        String keyCol = this.getKeyColumn();
+        int leftKeyIdx = outputMap.findColumn(keyCol);
+        if (leftKeyIdx < 0)
+            throw new IOException("Cannot find column \"" + keyCol + "\" on the left.");
+        // Get the input file (on the right), keyed by the key column.
+        KeyedFileMap inputMap = new KeyedFileMap(this.inFile, keyCol);
+        // Update the headers for the output map.
+        List<String> headers = this.getHeaders();
+        outputMap.addHeaders(headers);
+        // Get the locations of the input file data columns.
+        int[] colIdxs = headers.stream().mapToInt(x -> inputMap.findColumn(x)).toArray();
+        // These will be used for our output statistics.
+        int dupCount = 0;
+        int leftOnly = 0;
+        Set<String> keysUsed = new HashSet<String>(inputMap.size());
+        // Loop through the output map, linking records.  Note that we do not have
+        // unique keys any more, so the same input map record may be used multiple
+        // times.
+        Iterator<Map.Entry<String, List<String>>> iter = outputMap.iterator();
+        while (iter.hasNext()) {
+            Map.Entry<String, List<String>> outEntry = iter.next();
+            List<String> outRecord = outEntry.getValue();
+            String key = outRecord.get(leftKeyIdx);
+            List<String> inRecord = inputMap.getRecord(key);
+            if (inRecord == null) {
+                // No matching right record, so delete this left record.
+                leftOnly++;
+                iter.remove();
+            } else {
+                // Here we are keeping the record. Update the duplicate-key count.
+                if (! keysUsed.add(key))
+                    dupCount++;
+                // Add the new-record columns to the output record.
+                Arrays.stream(colIdxs).forEach(i -> outRecord.add(inRecord.get(i)));
+            }
+        }
+        // Update the status message.
+        this.txtMessage.setText(String.format("%d keys missing on the left, %d keys unused on the right, %d keys reused, %d output records.",
+                leftOnly, inputMap.size() - keysUsed.size(), dupCount, outputMap.size()));
     }
 
     @Override

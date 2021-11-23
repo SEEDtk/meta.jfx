@@ -99,6 +99,22 @@ public enum JoinType {
             return "Save to Excel";
         }
 
+    }, HTMLSAVE {
+        @Override
+        protected IJoinSpec createController() {
+            return new HtmlSaveSpec();
+        }
+
+        @Override
+        protected String getFxml() {
+            return "HtmlSaveSpec.fxml";
+        }
+
+        @Override
+        public String toString() {
+            return "Save to Web Page";
+        }
+
     }, FILESAVE {
         @Override
         protected IJoinSpec createController() {
