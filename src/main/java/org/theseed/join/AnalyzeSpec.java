@@ -69,7 +69,7 @@ public class AnalyzeSpec implements IJoinSpec {
     /** array of label counts */
     private LabelCount[] labelCounters;
     /** extension filter for label files */
-    private static final ExtensionFilter LABEL_FILTER = new ExtensionFilter("Label files", "labels.txt");
+    protected static final ExtensionFilter LABEL_FILTER = new ExtensionFilter("Label files", "*.txt");
 
     // CONTROLS
 

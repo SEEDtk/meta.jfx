@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane hgap="5.0" minHeight="200.0" minWidth="400.0" prefHeight="500.0" prefWidth="400.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <rowConstraints>
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="60.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
+      <RowConstraints minHeight="10.0" prefHeight="50.0" />
+   </rowConstraints>
+   <columnConstraints>
+      <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
+      <ColumnConstraints minWidth="10.0" prefWidth="200.0" />
+      <ColumnConstraints hgrow="ALWAYS" />
+   </columnConstraints>
+   <children>
+      <Label fx:id="lblTitle" text="Field Pattern Match" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
+      <Label text="Match Column" GridPane.rowIndex="1" />
+      <TextField fx:id="txtMatchColumn" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+         <children>
+            <Button mnemonicParsing="false" onAction="#deleteFile" text="X" textFill="RED">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Button>
+         </children>
+      </HBox>
+      <Label text="Match Pattern" GridPane.rowIndex="2" />
+      <TextArea fx:id="txtPattern" prefHeight="60.0" prefWidth="200.0" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+      <CheckBox fx:id="chkInsensitive" mnemonicParsing="false" onAction="#updatePattern" text="Case Insensitive" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <CheckBox fx:id="chkLiteral" mnemonicParsing="false" onAction="#updatePattern" text="Literal" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <TextArea fx:id="txtMessage" editable="false" prefHeight="50.0" prefWidth="200.0" styleClass="readOnly" stylesheets="@mods.css" wrapText="true" GridPane.columnSpan="3" GridPane.rowIndex="6" />
+      <ChoiceBox fx:id="cmbMode" prefWidth="75.0" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+   </children>
+</GridPane>

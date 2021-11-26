@@ -35,6 +35,23 @@ public enum JoinType {
             return "Input File";
         }
 
+    }, CONFUSION {
+
+        @Override
+        protected IJoinSpec createController() {
+            return new ConfusionSpec();
+        }
+
+        @Override
+        protected String getFxml() {
+            return "ConfusionSpec.fxml";
+        }
+
+        @Override
+        public String toString() {
+            return "Analyze Classifier";
+        }
+
     }, ANALYZE {
         @Override
         protected IJoinSpec createController() {
@@ -51,6 +68,22 @@ public enum JoinType {
             return "Analyze Column Bias";
         }
 
+    }, CLASSIFY {
+
+        @Override
+        protected IJoinSpec createController() {
+            return new ClassifySpec();
+        }
+
+        @Override
+        protected String getFxml() {
+            return "ClassifySpec.fxml";
+        }
+
+        @Override
+        public String toString() {
+            return "Classify a Column";
+        }
     }, FILTER {
         @Override
         protected IJoinSpec createController() {
@@ -65,6 +98,23 @@ public enum JoinType {
         @Override
         public String toString() {
             return "File Filtering";
+        }
+
+    }, MATCH {
+
+        @Override
+        protected IJoinSpec createController() {
+            return new MatchSpec();
+        }
+
+        @Override
+        protected String getFxml() {
+            return "MatchSpec.fxml";
+        }
+
+        @Override
+        public String toString() {
+            return "Pattern Matching";
         }
 
     }, JOIN {

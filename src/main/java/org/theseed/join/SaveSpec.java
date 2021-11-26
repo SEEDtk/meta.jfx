@@ -47,7 +47,7 @@ public abstract class SaveSpec implements IJoinSpec {
     private CheckBox chkOpenFile;
 
     @Override
-    public void init(JoinDialog parent, Node node) {
+    public final void init(JoinDialog parent, Node node) {
         // Connect the parent dialog.
         this.parent = parent;
         this.node = node;
@@ -95,7 +95,7 @@ public abstract class SaveSpec implements IJoinSpec {
     protected abstract ExtensionFilter getFilter();
 
     @Override
-    public Node getNode() {
+    public final Node getNode() {
         return this.node;
     }
 
@@ -112,7 +112,7 @@ public abstract class SaveSpec implements IJoinSpec {
     }
 
     @Override
-    public void setTitle(String title) {
+    public final void setTitle(String title) {
         this.lblTitle.setText(title);
     }
 
