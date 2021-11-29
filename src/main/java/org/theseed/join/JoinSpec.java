@@ -32,6 +32,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -75,6 +76,10 @@ public class JoinSpec implements IJoinSpec {
     /** key column selector */
     @FXML
     private ChoiceBox<String> cmbKeyColumn;
+
+    /** blank-key toggle */
+    @FXML
+    private CheckBox chkIgnoreEmpty;
 
     /** list view for selecting columns to include */
     @FXML
@@ -424,16 +429,27 @@ public class JoinSpec implements IJoinSpec {
             // Now read in the file.
             for (TabbedLineReader.Line line : inStream) {
                 String key = line.get(keyIdx);
-                // We don't use a standard stream here because we need a mutable list.
-                List<String> data = new ArrayList<String>(cols.length);
-                Arrays.stream(cols).forEach(i -> data.add(line.get(i)));
-                // Associate the key with the data.  Note the order is preserved by the linked hash map,
-                // but if there are duplicate keys, the last one will be the one kept.
-                retVal.put(key, data);
+                // Always proceed if ignore-empty is unselected; otherwise, only proceed for
+                // non-blank keys.
+                if (! this.ignoreEmptyKeys() || ! key.isBlank()) {
+                    // We don't use a standard stream here because we need a mutable list.
+                    List<String> data = new ArrayList<String>(cols.length);
+                    Arrays.stream(cols).forEach(i -> data.add(line.get(i)));
+                    // Associate the key with the data.  Note the order is preserved by the linked hash map,
+                    // but if there are duplicate keys, the last one will be the one kept.
+                    retVal.put(key, data);
+                }
             }
         }
         // Return the filled map.
         return retVal;
+    }
+
+    /**
+     * @return TRUE if we should ignore empty keys, else FALSE
+     */
+    protected boolean ignoreEmptyKeys() {
+        return this.chkIgnoreEmpty.isSelected();
     }
 
     /**

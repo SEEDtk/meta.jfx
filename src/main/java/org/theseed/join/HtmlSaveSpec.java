@@ -47,7 +47,7 @@ public class HtmlSaveSpec extends SaveSpec {
     private static final ContainerTag STYLES = style("td.num, th.num { text-align: right; }\n" +
             "td.flag, th.flag { text-align: center; }\ntd.text, th.text { text-align: left; }\n" +
             "td, th { border-style: groove; padding: 2px; vertical-align: top; }\n" +
-            "table { border-collapse: collapse; table-layout: fixed; width: 95vw }");
+            "table { border-collapse: collapse; width: 95vw }");
 
     // CONTROLS
 
