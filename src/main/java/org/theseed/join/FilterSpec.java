@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.io.KeyedFileMap;
@@ -25,6 +26,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 
@@ -66,7 +68,7 @@ public class FilterSpec implements IJoinSpec {
 
     /** stats message area */
     @FXML
-    private TextField txtMessage;
+    private TextArea txtMessage;
 
     public static enum Type {
         INCLUDE {
@@ -101,6 +103,17 @@ public class FilterSpec implements IJoinSpec {
             @Override
             public void apply(FilterSpec parent, KeyedFileMap outputMap) throws IOException {
                 parent.applyMerge(outputMap);
+            }
+
+        }, FLAG {
+            @Override
+            public String toString() {
+                return "flag";
+            }
+
+            @Override
+            public void apply(FilterSpec parent, KeyedFileMap outputMap) throws IOException {
+                parent.applyFlag(outputMap);
             }
 
         };
@@ -271,8 +284,7 @@ public class FilterSpec implements IJoinSpec {
      */
     private void applyFilter(KeyedFileMap outputMap, boolean type) throws IOException {
         // Get the set of keys in this input file.
-        String keyColumn = this.cmbKeyColumn.getValue();
-        Set<String> keys = TabbedLineReader.readSet(this.inFile, keyColumn);
+        Set<String> keys = getInputKeys();
         // Remember the initial file size.
         int initial = outputMap.size();
         // Loop through the output map, checking each record against the set.
@@ -286,6 +298,41 @@ public class FilterSpec implements IJoinSpec {
         this.txtMessage.setText(String.format("%d keys in filter file.  %d records kept, %d deleted.",
                 keys.size(), outputMap.size(), initial - outputMap.size()));
     }
+
+    /**
+     * @return the set of keys in the input file
+     *
+     * @throws IOException
+     */
+    protected Set<String> getInputKeys() throws IOException {
+        String keyColumn = this.cmbKeyColumn.getValue();
+        Set<String> retVal = TabbedLineReader.readSet(this.inFile, keyColumn);
+        return retVal;
+    }
+
+    /**
+     * Add a flag column at the end.  The column will contain "Y" if there is a match, and will be blank
+     * otherwise.
+     *
+     * @param outputMap		output map being built
+     */
+    protected void applyFlag(KeyedFileMap outputMap) throws IOException {
+        // Get the base name of the input file without the extension.  This is our column title.
+        String name = StringUtils.substringBeforeLast(inFile.getName(), ".");
+        outputMap.addHeaders(Arrays.asList(name));
+        // Get all the keys in the input file.
+        Set<String> keys = this.getInputKeys();
+        // Loop through the output, adding the flag value.
+        int count = 0;
+        for (List<String> record : outputMap.getRecords()) {
+            // The first field is always the key.
+            String flag = (keys.contains(record.get(0)) ? "Y" : "");
+            record.add(flag);
+            count++;
+        }
+        this.txtMessage.setText(String.format("%d records flagged.", count));
+    }
+
 
     @Override
     public void setTitle(String title) {
