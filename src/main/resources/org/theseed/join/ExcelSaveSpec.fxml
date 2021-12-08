@@ -7,8 +7,9 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.GridPane?>
 
-<GridPane hgap="5.0" minHeight="200.0" minWidth="400.0" prefHeight="500.0" prefWidth="400.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<GridPane hgap="5.0" minHeight="250.0" minWidth="400.0" prefHeight="500.0" prefWidth="400.0" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <rowConstraints>
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
@@ -42,7 +43,7 @@
       </Label>
       <TextField fx:id="txtSheetName" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
       <Label fx:id="lblTitle" text="Save as Spreadsheet" GridPane.columnSpan="3" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" />
-      <CheckBox fx:id="chkOpenFile" mnemonicParsing="false" text="Open File in Excel" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <CheckBox fx:id="chkOpenFile" mnemonicParsing="false" text="Open File in Excel" GridPane.columnIndex="1" GridPane.rowIndex="5" />
       <Label text="Number Precision" GridPane.rowIndex="3" />
       <Slider fx:id="slidePrecision" blockIncrement="1.0" majorTickUnit="2.0" max="8.0" min="1.0" minorTickCount="1" showTickMarks="true" snapToTicks="true" value="2.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
       <Label fx:id="lblPrecision" text="2" GridPane.columnIndex="2" GridPane.rowIndex="3">
@@ -50,9 +51,11 @@
             <Insets left="5.0" />
          </GridPane.margin>
       </Label>
-      <CheckBox fx:id="chkAppend" mnemonicParsing="false" text="Append to Existing" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-      <CheckBox fx:id="chkPubmed" mnemonicParsing="false" onAction="#togglePubmedBox" GridPane.columnIndex="2" GridPane.rowIndex="6" />
-      <Label text="Link to Pubmed" GridPane.rowIndex="6" />
-      <TextField fx:id="txtPubmed" disable="true" text="pubmed" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+      <CheckBox fx:id="chkAppend" mnemonicParsing="false" text="Append to Existing" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+      <CheckBox fx:id="chkPubmed" mnemonicParsing="false" onAction="#togglePubmedBox" GridPane.columnIndex="2" GridPane.rowIndex="7" />
+      <Label text="Link to Pubmed" GridPane.rowIndex="7" />
+      <TextField fx:id="txtPubmed" disable="true" text="pubmed" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+      <Label text="Max Col Width" GridPane.rowIndex="4" />
+      <ChoiceBox fx:id="cmbMaxWidth" prefHeight="25.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
    </children>
 </GridPane>
