@@ -20,6 +20,7 @@ import javafx.scene.Node;
  */
 public enum JoinType {
     INIT {
+
         @Override
         protected IJoinSpec createController() {
             return new FileSpec();
@@ -53,6 +54,7 @@ public enum JoinType {
         }
 
     }, ANALYZE {
+
         @Override
         protected IJoinSpec createController() {
             return new AnalyzeSpec();
@@ -84,7 +86,9 @@ public enum JoinType {
         public String toString() {
             return "Classify a Column";
         }
+
     }, FILTER {
+
         @Override
         protected IJoinSpec createController() {
             return new FilterSpec();
@@ -118,6 +122,7 @@ public enum JoinType {
         }
 
     }, JOIN {
+
         @Override
         protected IJoinSpec createController() {
             return new JoinSpec();
@@ -131,6 +136,23 @@ public enum JoinType {
         @Override
         public String toString() {
             return "File Join";
+        }
+
+    }, PICK {
+
+        @Override
+        protected IJoinSpec createController() {
+            return new PickSpec();
+        }
+
+        @Override
+        protected String getFxml() {
+            return "PickSpec.fxml";
+        }
+
+        @Override
+        public String toString() {
+            return "Random Subset";
         }
 
     }, EXCELSAVE {
