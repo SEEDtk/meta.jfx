@@ -4,7 +4,7 @@
 package org.theseed.join;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.theseed.test.Matchers.*;
+import static org.hamcrest.Matchers.*;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,16 +21,16 @@ public class TextNumPatterns {
         String[] ints = new String[] { "1", "-2", "+34567" };
         String[] bads = new String[] { "1+2", "345.6.7", "8.4+1" };
         for (String fString : floats) {
-            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), isTrue());
-            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), isFalse());
+            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), equalTo(true));
+            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), equalTo(false));
         }
         for (String fString : ints) {
-            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), isTrue());
-            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), isTrue());
+            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), equalTo(true));
+            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), equalTo(true));
         }
         for (String fString : bads) {
-            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), isFalse());
-            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), isFalse());
+            assertThat(fString, ColumnData.DOUBLE_PATTERN.matcher(fString).matches(), equalTo(false));
+            assertThat(fString, ColumnData.INTEGER_PATTERN.matcher(fString).matches(), equalTo(false));
         }
 
     }
