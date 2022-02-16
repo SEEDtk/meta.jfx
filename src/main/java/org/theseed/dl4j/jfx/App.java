@@ -44,7 +44,7 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        TrainingManager trainer = (TrainingManager) BaseController.loadFXML("TrainingManager", stage);
+        TrainingManager trainer = (TrainingManager) BaseController.loadFXML(App.class, "TrainingManager", stage);
         Thread.setDefaultUncaughtExceptionHandler(new Handler());
         trainer.init();
         stage.show();

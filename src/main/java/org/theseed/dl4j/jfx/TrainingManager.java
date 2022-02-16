@@ -293,7 +293,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                         "Training file has no data.  You may need a data conversion first.");
             } else {
                 Stage dialogStage = new Stage();
-                ParmDialog dialog = (ParmDialog) BaseController.loadFXML("ParmDialog", dialogStage);
+                ParmDialog dialog = (ParmDialog) BaseController.loadFXML(App.class, "ParmDialog", dialogStage);
                 dialog.init(this.parmFile, this.modelType);
                 dialogStage.showAndWait();
                 if (dialog.getResult()) {
@@ -334,7 +334,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
     private void viewLog(ActionEvent event) {
         try {
             Stage logStage = new Stage();
-            LogViewer logViewer = (LogViewer) BaseController.loadFXML("LogViewer", logStage);
+            LogViewer logViewer = (LogViewer) BaseController.loadFXML(App.class, "LogViewer", logStage);
             File logFile = new File(this.modelDirectory, "trials.log");
             logViewer.init(logFile, this.txtModelDirectory.getText());
             logStage.show();
@@ -360,7 +360,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
                 // Compute the type of result display.
                 String displayType = this.modelType.getDisplayType();
                 // Create and display the result dialog.
-                ResultDisplay resultDialog = (ResultDisplay) BaseController.loadFXML("ResultDisplay", resultStage);
+                ResultDisplay resultDialog = (ResultDisplay) BaseController.loadFXML(App.class, "ResultDisplay", resultStage);
                 resultDialog.init(processor, displayType);
                 resultStage.showAndWait();
             } else {
@@ -380,7 +380,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
     private void showPredict(ActionEvent event) {
         try {
             Stage predictStage = new Stage();
-            PredictDialog predictDialog = (PredictDialog) BaseController.loadFXML("PredictDialog", predictStage);
+            PredictDialog predictDialog = (PredictDialog) BaseController.loadFXML(App.class, "PredictDialog", predictStage);
             predictDialog.init(this.modelDirectory, this.modelType);
             predictStage.showAndWait();
             // Check for a join request.
@@ -415,7 +415,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
      */
     private void invokeJoinDialog(File initFile) throws IOException {
         Stage joinStage = new Stage();
-        JoinDialog joinDialog = (JoinDialog) BaseController.loadFXML("/org/theseed/join/JoinDialog", joinStage);
+        JoinDialog joinDialog = (JoinDialog) BaseController.loadFXML(JoinDialog.class, "JoinDialog", joinStage);
         joinDialog.init(this.modelDirectory, initFile);
         joinStage.showAndWait();
     }
@@ -578,7 +578,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         Stage stage = new Stage();
         String[] headers = new String[availableHeaders.size()];
         headers = availableHeaders.toArray(headers);
-        MetaDialog dialog = (MetaDialog) BaseController.loadFXML("MetaDialog", stage);
+        MetaDialog dialog = (MetaDialog) BaseController.loadFXML(App.class, "MetaDialog", stage);
         dialog.init(headers, this.modelType);
         stage.showAndWait();
         return dialog.getResult();
@@ -762,7 +762,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
     private void convertInput(ActionEvent event) {
         try {
             Stage convertStage = new Stage();
-            BalanceInput balanceDialog = (BalanceInput) BaseController.loadFXML("BalanceInput", convertStage);
+            BalanceInput balanceDialog = (BalanceInput) BaseController.loadFXML(App.class, "BalanceInput", convertStage);
             ITrainingProcessor processor = ModelType.create(this.modelType);
             Parms parms = new Parms(this.parmFile);
             if (! processor.setupParameters(parms, this.modelDirectory))
@@ -786,7 +786,7 @@ public class TrainingManager extends ResizableController implements ITrainReport
         try {
             Stage viewStage = new Stage();
             File trainFile = new File(this.modelDirectory, "training.tbl");
-            TrainingView viewDialog = (TrainingView) BaseController.loadFXML("TrainingView", viewStage);
+            TrainingView viewDialog = (TrainingView) BaseController.loadFXML(App.class, "TrainingView", viewStage);
             viewDialog.init(trainFile, this.labelIdx, this.labelNames);
             viewStage.show();
         } catch (IOException e) {
