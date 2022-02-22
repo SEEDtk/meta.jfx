@@ -588,7 +588,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      */
     @FXML
     protected void computePath(ActionEvent event) {
+    	// Compute the pathway.
         // TODO compute the path
+    	// TODO display the path in the PathDisplay
     }
 
 }
