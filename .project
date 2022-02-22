@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>dl4j.jfx</name>
+	<name>meta.jfx</name>
 	<comment></comment>
 	<projects>
 		<project>dl4j.decision</project>

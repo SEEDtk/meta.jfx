@@ -40,24 +40,9 @@
             <classifier>mac</classifier>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.21</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.theseed</groupId>
-            <artifactId>dl4j</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.theseed</groupId>
-            <artifactId>dl4j.utils</artifactId>
-            <version>1.0.0</version>
+          <groupId>com.github.cliftonlabs</groupId>
+          <artifactId>json-simple</artifactId>
+          <version>3.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.theseed</groupId>
@@ -66,12 +51,37 @@
         </dependency>
         <dependency>
             <groupId>org.theseed</groupId>
-            <artifactId>shared.jfx</artifactId>
+            <artifactId>shared.meta</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.theseed</groupId>
+            <artifactId>p3api</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.theseed</groupId>
+            <artifactId>java.erdb</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.theseed</groupId>
             <artifactId>excel.utils</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.21</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.10</version>
+        </dependency>
+        <dependency>
+            <groupId>org.theseed</groupId>
+            <artifactId>shared.jfx</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
