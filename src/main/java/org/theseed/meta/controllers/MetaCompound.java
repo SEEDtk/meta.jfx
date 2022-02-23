@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.meta.jfx;
+package org.theseed.meta.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 

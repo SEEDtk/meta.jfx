@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.meta.jfx;
+package org.theseed.meta.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

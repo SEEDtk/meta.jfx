@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package meta.jfx;
 
@@ -13,12 +13,9 @@ import org.junit.jupiter.api.Test;
  */
 class TestMeta {
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
-	}
-	// FIELDS
-	// TODO data members for TestMeta
+    @Test
+    void test() {
+        fail("Not yet implemented");
+    }
 
-	// TODO constructors and methods for TestMeta
 }

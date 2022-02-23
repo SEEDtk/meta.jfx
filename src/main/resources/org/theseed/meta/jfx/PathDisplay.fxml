@@ -24,12 +24,6 @@
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                <children>
                   <TableView fx:id="tblPathway" layoutX="63.0" layoutY="27.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0">
-                    <columns>
-                      <TableColumn fx:id="colReaction" editable="false" maxWidth="1.7976931348623157E308" prefWidth="75.0" text="Reaction" />
-                      <TableColumn fx:id="colReactionName" editable="false" maxWidth="1.7976931348623157E308" prefWidth="150.0" text="Name" />
-                        <TableColumn fx:id="colRule" editable="false" maxWidth="1.7976931348623157E308" prefWidth="150.0" text="Rule" />
-                        <TableColumn fx:id="colFormula" editable="false" maxWidth="1.7976931348623157E308" prefWidth="250.0" text="Formula" />
-                    </columns>
                   </TableView>
                </children>
             </AnchorPane>

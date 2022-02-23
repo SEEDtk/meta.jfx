@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.meta.jfx;
+package org.theseed.meta.controllers;
 
 /**
  * This is a simple interface that provides a method to find a compound descriptor given a compound ID.

@@ -4,14 +4,14 @@
 package org.theseed.meta.jfx;
 
 import org.theseed.jfx.ResizableController;
+import org.theseed.meta.controllers.MetaCompound;
+import org.theseed.meta.controllers.ReactionTrigger;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
-import org.theseed.metabolism.Reaction;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 
 /**
@@ -33,27 +33,11 @@ public class PathDisplay extends ResizableController {
 
     /** main pathway display table */
     @FXML
-    private TableView<Reaction> tblPathway;
-
-    /** pathway display table column for reaction ID */
-    @FXML
-    private TableColumn<Reaction, String> colReaction;
-
-    /** pathway display table column for reaction name */
-    @FXML
-    private TableColumn<Reaction, String> colReactionName;
-
-    /** pathway display table column for reaction rule */
-    @FXML
-    private TableColumn<Reaction, String> colRule;
-
-    /** pathway display table column for reaction formula */
-    @FXML
-    private TableColumn<Reaction, String> colFormula;
+    private TableView<Pathway.Element> tblPathway;
 
     /** list control for triggering proteins */
     @FXML
-    private ListView<ReactionTrigger> lstTriggers; // TODO not String, but some sort of trigger object
+    private ListView<ReactionTrigger> lstTriggers;
 
     /** list control for input compounds */
     @FXML

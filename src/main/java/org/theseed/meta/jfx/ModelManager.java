@@ -18,6 +18,9 @@ import org.slf4j.LoggerFactory;
 import org.theseed.genome.Genome;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.ResizableController;
+import org.theseed.meta.controllers.CompoundList;
+import org.theseed.meta.controllers.ICompoundFinder;
+import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.metabolism.AvoidPathwayFilter;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
@@ -31,22 +34,15 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
 import javafx.scene.control.Button;
 
 /**
@@ -72,6 +68,12 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     private Map<String, MetaCompound> metaCompoundMap;
     /** current flow modifier */
     private ModifierList flowModifier;
+    /** controller for compound search list */
+    protected CompoundList searchListController;
+    /** controller for path list */
+    protected CompoundList pathListController;
+    /** controller for avoid list */
+    protected CompoundList avoidListController;
     /** extension filter for flow files */
     private static final FileChooser.ExtensionFilter FLOW_FILES =
             new FileChooser.ExtensionFilter("Flow Command Files", "*.flow");
@@ -153,173 +155,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     }
 
-    /**
-     * This class defines the event handler for the compound search list.  This list can be
-     * a drag source (COPY), and the double-click event adds the selected compound to the
-     * current path.
-     */
-    public class SearchListListener implements CompoundDisplayCell.IHandler {
-
-        @Override
-        public void onDoubleClick(MouseEvent event, MetaCompound target) {
-            // Double-clicking automatically adds the compound to the path.
-            var pathItems = ModelManager.this.lstPath.getItems();
-            if (! pathItems.contains(target))
-                pathItems.add(target);
-        }
-
-        @Override
-        public TransferMode[] onDragStart(MouseEvent event, MetaCompound target) {
-            // We allow dragging of compounds in COPY mode.
-            return CompoundDisplayCell.DRAG_COPY;
-        }
-
-        @Override
-        public boolean onDragOver(DragEvent event, MetaCompound source, MetaCompound target) {
-            return false;
-        }
-
-        @Override
-        public void onDragDrop(DragEvent event, MetaCompound source, MetaCompound target) { }
-
-        @Override
-        public void onDragDone(DragEvent event, MetaCompound source) { }
-
-        @Override
-        public void onDelete(KeyEvent event, MetaCompound target) { }
-
-    }
-
-    /**
-     * This class defines the event handlers for the two compound lists that form the query-- Path and Avoid.
-     * These lists can be a drag source (MOVE) or a target.  Double-click has no effect, but DELETE will
-     * delete a node.
-     */
-    public class CompoundListListener implements CompoundDisplayCell.IHandler {
-
-        /** list control being managed */
-        private ListView<MetaCompound> listControl;
-        /** index at which last drop took place on this control */
-        private int dropIndex;
-
-        /**
-         * Construct a listener for a specified list.
-         *
-         * @param list		list control being managed.
-         */
-        public CompoundListListener(ListView<MetaCompound> list) {
-            this.listControl = list;
-            this.dropIndex = -1;
-        }
-
-        @Override
-        public void onDoubleClick(MouseEvent event, MetaCompound target) { }
-
-        @Override
-        public TransferMode[] onDragStart(MouseEvent event, MetaCompound target) {
-            // Clear the drop index.  It will remain cleared until something is dropped here.
-            this.dropIndex = -1;
-            // Denote we're moving.
-            return CompoundDisplayCell.DRAG_MOVE;
-        }
-
-        @Override
-        public boolean onDragOver(DragEvent event, MetaCompound source, MetaCompound target) {
-            return true;
-        }
-
-        @Override
-        public void onDragDrop(DragEvent event, MetaCompound source, MetaCompound target) {
-            // Here we are dropping.  If we are dropping on an empty cell, we add at the
-            // end; otherwise, we add before the target.
-            var items = this.listControl.getItems();
-            if (target == null) {
-                // Add to the end of the list.
-                items.add(source);
-                this.dropIndex = items.size() - 1;
-            } else {
-                // Add before the target.
-                int idx = items.indexOf(target);
-                items.add(idx, source);
-                this.dropIndex = idx;
-            }
-            // Insure we don't have two copies of the compound in this list.  If we do, we delete
-            // the ones that weren't just dropped.
-            for (int i = 0; i < items.size(); i++) {
-                MetaCompound curr = items.get(i);
-                if (i != this.dropIndex && curr.equals(source)) {
-                    items.remove(i);
-                    if (i < this.dropIndex) this.dropIndex--;
-                }
-            }
-        }
-
-        @Override
-        public void onDragDone(DragEvent event, MetaCompound source) {
-            // Here we must delete the compound from this list, because it has been moved.
-            // We only do this if the drop index is -1, indicating that the drag started
-            // here but did not end here.
-            if (this.dropIndex == -1) {
-                var items = this.listControl.getItems();
-                items.remove(source);
-            }
-        }
-
-        @Override
-        public void onDelete(KeyEvent event, MetaCompound target) {
-            // Here the user wants us to delete the current item.
-            var items = this.listControl.getItems();
-            items.remove(target);
-        }
-
-    }
-
-    /**
-     * This class handles a drag-over event for the list control.  It is only called if we are in
-     * an empty section of the list; otherwise, the event is consumed by the cell handler.
-     */
-    private class ListDragOverListener implements EventHandler<DragEvent> {
-
-        /** event handler for target list control */
-        private CompoundDisplayCell.IHandler listHandler;
-
-        public ListDragOverListener(CompoundDisplayCell.IHandler handler) {
-            this.listHandler = handler;
-        }
-
-        @Override
-        public void handle(DragEvent event) {
-            MetaCompound source = CompoundDisplayCell.getDragSource(event, ModelManager.this);
-            if (source != null) {
-                boolean ok = this.listHandler.onDragOver(event, source, null);
-                if (ok)
-                    event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
-            }
-        }
-
-    }
-
-    /**
-     * This class handles a drag-dropped event for the list control.  It is only called if we are in
-     * an empty section of the list; otherwise, the event is consumed by the cell handler.
-     */
-    private class ListDragDropListener implements EventHandler<DragEvent> {
-
-        /** event handler for target list control */
-        private CompoundDisplayCell.IHandler listHandler;
-
-        public ListDragDropListener(CompoundDisplayCell.IHandler handler) {
-            this.listHandler = handler;
-        }
-
-        @Override
-        public void handle(DragEvent event) {
-            MetaCompound source = CompoundDisplayCell.getDragSource(event, ModelManager.this);
-            if (source != null)
-                this.listHandler.onDragDrop(event, source, null);
-        }
-
-    }
 
     public ModelManager() {
         super(200, 200, 1000, 800);
@@ -351,9 +186,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         // Set up a change listener on the text field.
         this.txtSearchCompound.textProperty().addListener(this.new SearchListener());
         // Create cell factories for the three compound lists.
-        this.setupListControl(this.lstCompounds, this.new SearchListListener());
-        this.setupListControl(this.lstPath, this.new CompoundListListener(this.lstPath));
-        this.setupListControl(this.lstAvoid, this.new CompoundListListener(this.lstAvoid));
+        this.avoidListController = new CompoundList.Droppable(this.lstAvoid, this);
+        this.pathListController = new CompoundList.Droppable(this.lstPath, this);
+        this.searchListController = new CompoundList.Normal(this.lstCompounds, this);
         // Try to load the model.
         boolean ok = false;
         try {
@@ -366,28 +201,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         }
         // Toggle the buttons according to whether we have a valid directory.
         this.setState(ok);
-    }
-
-    /**
-     * Set up the cell factory for a list control.  The cell factory creates list cells that use
-     * a particular handler for the major events and are of the type CompoundDisplayCell.
-     *
-     * @param myList		list control to set up
-     * @param myHandler		event handler for the list control
-     */
-    private void setupListControl(ListView<MetaCompound> myList, CompoundDisplayCell.IHandler myHandler) {
-        // Set up the cell factory.
-        myList.setCellFactory(new Callback<ListView<MetaCompound>,ListCell<MetaCompound>>() {
-
-            @Override
-            public ListCell<MetaCompound> call(ListView<MetaCompound> list) {
-                return new CompoundDisplayCell(myHandler, ModelManager.this);
-            }
-
-        });
-        // Set up the fallback listeners.
-        myList.setOnDragOver(this.new ListDragOverListener(myHandler));
-        myList.setOnDragDropped(this.new ListDragDropListener(myHandler));
     }
 
     /**
@@ -474,7 +287,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         }
         log.info("{} compounds loaded from model {}.", this.metaCompoundMap.size(), this.model);
     }
-
 
     /**
      * Erase the path currently being constructed so the user can start over.
