@@ -62,6 +62,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     private MetaModel model;
     /** current model directory */
     private File modelDir;
+    /** current flow file */
+    private File flowFile;
     /** visible list of compounds for the current model */
     private ObservableList<MetaCompound> availableCompounds;
     /** map of compound IDs to compound descriptors */
@@ -75,12 +77,12 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     /** controller for avoid list */
     protected CompoundList avoidListController;
     /** extension filter for flow files */
-    private static final FileChooser.ExtensionFilter FLOW_FILES =
+    public static final FileChooser.ExtensionFilter FLOW_FILES =
             new FileChooser.ExtensionFilter("Flow Command Files", "*.flow");
     /** extension filter for all files */
-    private static final FileChooser.ExtensionFilter ALL_FILES =
+    public static final FileChooser.ExtensionFilter ALL_FILES =
             new FileChooser.ExtensionFilter("All Files", "*.*");
-    private static final FileChooser.ExtensionFilter PATH_FILES =
+    public static final FileChooser.ExtensionFilter PATH_FILES =
             new FileChooser.ExtensionFilter("All Files", "*.path.json");
 
     // CONTROLS
@@ -140,6 +142,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     /** load-and-display-path button */
     @FXML
     private Button btnLoadPath;
+
+    /** refresh-flow-file button */
+    @FXML
+    private Button btnFlowRefresh;
 
 
     /**
@@ -216,6 +222,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.btnClearAvoid.setDisable(! valid);
         this.btnShowCommons.setDisable(! valid);
         this.btnSelectFlow.setDisable(! valid);
+        this.btnFlowRefresh.setDisable(true);
     }
 
     /**
@@ -246,6 +253,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 this.clearCurrentPath();
                 this.clearCurrentAvoid();
                 this.chkLooped.setSelected(false);
+                this.flowFile = null;
+                this.txtFlowFile.setText("");
                 // Denote we have successfully loaded a model.
                 String message = String.format("%d reactions loaded from model for %s.",
                         this.model.getReactionCount(), baseGenome.toString());
@@ -390,24 +399,52 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         boolean done = false;
         while (! done) {
             // Ask the user for the file.
-            File flowFile = chooser.showOpenDialog(this.getStage());
-            if (flowFile == null)
+            File userFlowFile = chooser.showOpenDialog(this.getStage());
+            if (userFlowFile == null)
                 done = true;
             else {
                 try {
-                    this.flowModifier = new ModifierList(flowFile);
-                    // Reset the model and apply the new modifier list.
-                    this.model.resetFlow();
-                    int modCount = this.flowModifier.apply(this.model);
-                    this.showStatus(String.format("%d reactions modified by flow modifiers.",
-                            modCount, this.flowModifier.size()));
-                    this.txtFlowFile.setText(flowFile.getName());
+                    this.loadFlowFile(userFlowFile);
                     done = true;
                 } catch (IOException e) {
                     BaseController.messageBox(AlertType.ERROR, "Invalid Flow File", e.toString());
                 }
             }
         }
+    }
+
+    /**
+     * Refresh the flow-modification file from disk.  Presumably, the user has just updated it.
+     *
+     * @param event		event that triggered this action
+     */
+    @FXML
+    protected void refreshFlowFile(ActionEvent event) {
+        try {
+            this.loadFlowFile(this.flowFile);
+        } catch (IOException e) {
+            BaseController.messageBox(AlertType.ERROR, "Error Reloading Flow Modifications", e.toString());
+        }
+    }
+
+    /**
+     * Load the specified flow-modification file into the model.
+     *
+     * @param userFlowFile	flow modification file to load
+     *
+     * @throws IOException
+     */
+    private void loadFlowFile(File userFlowFile) throws IOException {
+        this.flowModifier = new ModifierList(userFlowFile);
+        // Reset the model and apply the new modifier list.
+        this.model.resetFlow();
+        int modCount = this.flowModifier.apply(this.model);
+        this.model.buildReactionNetwork();
+        this.showStatus(String.format("%d reactions modified by flow modifiers.",
+                modCount, this.flowModifier.size()));
+        this.txtFlowFile.setText(userFlowFile.getName());
+        this.flowFile = userFlowFile;
+        this.btnFlowRefresh.setDisable(false);
     }
 
     /**
@@ -524,5 +561,12 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      */
     public MetaModel getModel() {
         return this.model;
+    }
+
+    /**
+     * @return the current model directory
+     */
+    public File getModelDir() {
+        return this.modelDir;
     }
 }

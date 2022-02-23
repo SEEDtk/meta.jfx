@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
+import org.theseed.metabolism.Pathway.Element;
 import org.theseed.metabolism.Reaction;
 
 import javafx.beans.property.SimpleIntegerProperty;
@@ -20,7 +21,9 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -76,6 +79,44 @@ public class PathwayTable {
     }
 
     /**
+     * This is the cell factory class for reaction ID cells.  These require special rendering because
+     * reversed reactions have their ID shown in italics.
+     */
+    public class BiggIdDisplayCallback implements Callback<TableColumn<Element, String>, TableCell<Element, String>> {
+
+        @Override
+        public TableCell<Element, String> call(TableColumn<Element, String> param) {
+            return new BiggIdCell();
+        }
+
+    }
+
+    /**
+     * This object represents a reaction ID cell.  Reaction IDs have the text italicized if they are
+     * reversed, so they require a custom display.
+     */
+    public class BiggIdCell extends TableCell<Pathway.Element, String> {
+
+        @Override
+        public void updateItem(String bigg_id, boolean empty) {
+            super.updateItem(bigg_id, empty);
+            this.setText(null);
+            if (empty)
+                this.setGraphic(null);
+            else {
+                Pathway.Element element = this.getTableRow().getItem();
+                String reaction_id = element.getReaction().getBiggId();
+                Text reactionText = new Text(reaction_id);
+                if (element.isReversed()) {
+                    Font myFont = reactionText.getFont();
+                    reactionText.setFont(Font.font(myFont.getName(), FontPosture.ITALIC, myFont.getSize()));
+                }
+                this.setGraphic(reactionText);
+            }
+        }
+    }
+
+    /**
      * This is the cell factory class for formula cells.  Formula cells have the output metabolite boldfaced,
      * so they require a custom display.
      */
@@ -105,12 +146,13 @@ public class PathwayTable {
                 String formula = element.getReaction().getFormula(element.isReversed());
                 // This will be the graphic we display.
                 Node flow;
-                if (element.getOutput() == null) {
+                String output_id = element.getOutput();
+                if (output_id == null) {
                     // If there is no target output, we just emit the formula string.
                     flow = new Text(formula);
                 } else {
                     // Here we must bold the output metabolite.
-                    Pattern search = Pattern.compile("\\b" + element.getOutput() + "\\b");
+                    Pattern search = Pattern.compile("\\b" + output_id + "\\b");
                     Matcher m = search.matcher(formula);
                     if (! m.find())
                         flow = new Text(formula);
@@ -132,6 +174,10 @@ public class PathwayTable {
                         myFlow.getChildren().add(bolded);
                         if (end < formula.length())
                             myFlow.getChildren().add(new Text(formula.substring(end)));
+                        // Install a tooltip for the bolded text that gives the compound's full name.
+                        String outputName = PathwayTable.this.model.getCompoundName(output_id);
+                        Tooltip nameTip = new Tooltip(outputName);
+                        Tooltip.install(bolded, nameTip);
                         flow = myFlow;
                     }
                 }
@@ -152,19 +198,19 @@ public class PathwayTable {
         this.model = owningModel;
         this.table = tableControl;
         // Set the row height.
-        this.table.setFixedCellSize(30.0);
+        this.table.setFixedCellSize(30);
         // Create the table columns.
         this.numColumn = new TableColumn<Pathway.Element, Integer>("#");
         this.numColumn.setPrefWidth(30);
         this.numColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getSeqNum()).asObject());
         this.idColumn = new TableColumn<Pathway.Element, String>("Reaction");
         this.idColumn.setPrefWidth(100);
-        this.idColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getReaction().getBiggId()));
+        this.idColumn.setCellFactory(this.new BiggIdDisplayCallback());
         this.nameColumn = new TableColumn<Pathway.Element, String>("Name");
-        this.nameColumn.setPrefWidth(200);
+        this.nameColumn.setPrefWidth(300);
         this.nameColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getReaction().getName()));
         this.ruleColumn = new TableColumn<Pathway.Element, String>("Rule");
-        this.ruleColumn.setPrefWidth(300);
+        this.ruleColumn.setPrefWidth(200);
         this.ruleColumn.setCellValueFactory(this.new RuleDisplayCallback());
         this.formColumn = new TableColumn<Pathway.Element, String>("Formula");
         this.formColumn.setPrefWidth(500);
@@ -179,5 +225,6 @@ public class PathwayTable {
         final var items = this.table.getItems();
         this.path.stream().forEach(x -> items.add(x));
     }
+
 
 }

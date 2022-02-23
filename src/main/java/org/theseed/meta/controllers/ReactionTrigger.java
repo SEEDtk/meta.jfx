@@ -8,7 +8,9 @@ import org.theseed.meta.jfx.App;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Reaction;
 
+import javafx.scene.Node;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 /**
  * This class represents a feature that triggers a reaction.  The reaction can be either a
@@ -68,13 +70,13 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
     /**
      * @return the icon to display for this trigger
      */
-    protected abstract Image getIcon();
+    protected abstract Node getIcon();
 
 
     @Override
     public String toString() {
         StringBuilder retVal = new StringBuilder(100);
-        retVal.append(this.reaction.getId());
+        retVal.append(this.reaction.getBiggId());
         retVal.append(" <== ");
         retVal.append(this.feat.getId());
         if (! this.sortName.equals(NO_NAME))
@@ -142,8 +144,8 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
         }
 
         @Override
-        protected Image getIcon() {
-            return MAIN_ICON;
+        protected Node getIcon() {
+            return new ImageView(MAIN_ICON);
         }
 
     }
@@ -166,8 +168,8 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
         }
 
         @Override
-        protected Image getIcon() {
-            return BRANCH_ICON;
+        protected Node getIcon() {
+            return new ImageView(BRANCH_ICON);
         }
 
     }
