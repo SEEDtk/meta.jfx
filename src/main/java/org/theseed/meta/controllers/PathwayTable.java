@@ -110,6 +110,7 @@ public class PathwayTable {
                 if (element.isReversed()) {
                     Font myFont = reactionText.getFont();
                     reactionText.setFont(Font.font(myFont.getName(), FontPosture.ITALIC, myFont.getSize()));
+                    reactionText.setUnderline(true);
                 }
                 this.setGraphic(reactionText);
             }
@@ -171,6 +172,7 @@ public class PathwayTable {
                         Text bolded = new Text(formula.substring(start, end));
                         Font myFont = bolded.getFont();
                         bolded.setFont(Font.font(myFont.getName(),  FontWeight.BOLD, myFont.getSize()));
+                        bolded.setUnderline(true);
                         myFlow.getChildren().add(bolded);
                         if (end < formula.length())
                             myFlow.getChildren().add(new Text(formula.substring(end)));

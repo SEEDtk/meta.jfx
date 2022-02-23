@@ -110,6 +110,7 @@ public class MetaCompound implements Comparable<MetaCompound> {
         Text idText = new Text(this.id);
         Font defaultFont = idText.getFont();
         idText.setFont(Font.font(defaultFont.getName(), FontWeight.BOLD, defaultFont.getSize()));
+        idText.setUnderline(true);
         Text nameText = new Text(": " + this.name);
         return new TextFlow(idText, nameText);
     }
