@@ -11,7 +11,6 @@ import javafx.scene.control.ListCell;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
@@ -41,14 +40,6 @@ public class CompoundDisplayCell extends ListCell<MetaCompound> {
      * This interface defines an object that handles events for the cell.
      */
     public static interface IHandler {
-
-        /**
-         * Handle a double-click event for this cell.
-         *
-         * @param event		triggering click event
-         * @param target	metabolic compound clicked
-         */
-        public void onDoubleClick(MouseEvent event, MetaCompound target);
 
         /**
          * Handle a start-drag event for this cell.
@@ -98,22 +89,6 @@ public class CompoundDisplayCell extends ListCell<MetaCompound> {
          * @param target	metabolic compound being deleted
          */
         public void onDelete(KeyEvent event, MetaCompound target);
-
-    }
-
-    /**
-     * This class defines the handler for the click event.
-     */
-    protected class ClickHandler implements EventHandler<MouseEvent> {
-
-        @Override
-        public void handle(MouseEvent event) {
-            MetaCompound target = CompoundDisplayCell.this.getItem();
-            if (target != null && event.getClickCount() >= 2) {
-                CompoundDisplayCell.this.handler.onDoubleClick(event, target);
-            }
-            event.consume();
-        }
 
     }
 
@@ -194,24 +169,6 @@ public class CompoundDisplayCell extends ListCell<MetaCompound> {
     }
 
     /**
-     * This class handles keypress events.  Currently we only care about the DELETE key.
-     */
-    protected class KeyPressHandler implements EventHandler<KeyEvent> {
-
-        @Override
-        public void handle(KeyEvent event) {
-            if (event.getCode() == KeyCode.DELETE) {
-                MetaCompound target = CompoundDisplayCell.this.getItem();
-                if (target != null) {
-                    CompoundDisplayCell.this.handler.onDelete(event, target);
-                }
-                event.consume();
-            }
-        }
-
-    }
-
-    /**
      * Construct this cell and attach the event handlers.
      *
      * @param handler		event-handling object to use
@@ -221,12 +178,10 @@ public class CompoundDisplayCell extends ListCell<MetaCompound> {
         super();
         this.handler = handler;
         this.compoundOwner = owner;
-        this.setOnMouseClicked(this.new ClickHandler());
         this.setOnDragDetected(this.new DragStartHandler());
         this.setOnDragOver(this.new DragOverHandler());
         this.setOnDragDropped(this.new DragDropHandler());
         this.setOnDragDone(this.new DragDoneHandler());
-        this.setOnKeyPressed(this.new KeyPressHandler());
     }
 
     /**

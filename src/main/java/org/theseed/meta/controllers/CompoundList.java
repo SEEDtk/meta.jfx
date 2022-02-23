@@ -77,6 +77,37 @@ public abstract class CompoundList {
     }
 
     /**
+     * This class intercepts a keypress for the list control.  If it is a DELETE key or BACKSPACE
+     * key, it is passed to the delete event for the current list item.
+     */
+    protected class KeyPressListener implements EventHandler<KeyEvent> {
+
+        /** event handler for target list control */
+        private CompoundDisplayCell.IHandler listHandler;
+
+        public KeyPressListener(CompoundDisplayCell.IHandler handler) {
+            this.listHandler = handler;
+        }
+
+        @Override
+        public void handle(KeyEvent event) {
+            switch (event.getCode()) {
+            case DELETE :
+            case BACK_SPACE :
+                // Compute the list item with the focus.
+                MetaCompound target = CompoundList.this.list.getFocusModel().getFocusedItem();
+                if (target != null)
+                    this.listHandler.onDelete(event, target);
+                event.consume();
+                break;
+            default:
+                break;
+            }
+        }
+
+    }
+
+    /**
      * Set up a compound display list.
      *
      * @param listControl	list to manage
@@ -114,6 +145,7 @@ public abstract class CompoundList {
         // Set up the fallback listeners.
         this.list.setOnDragOver(this.new ListDragOverListener(myHandler));
         this.list.setOnDragDropped(this.new ListDragDropListener(myHandler));
+        this.list.setOnKeyPressed(this.new KeyPressListener(myHandler));
     }
 
     /**
@@ -138,14 +170,6 @@ public abstract class CompoundList {
          * current path.
          */
         public class Listener implements CompoundDisplayCell.IHandler {
-
-            @Override
-            public void onDoubleClick(MouseEvent event, MetaCompound target) {
-                // Double-clicking automatically adds the compound to the path.
-                var pathItems = CompoundList.Normal.this.getItems();
-                if (! pathItems.contains(target))
-                    pathItems.add(target);
-            }
 
             @Override
             public TransferMode[] onDragStart(MouseEvent event, MetaCompound target) {
@@ -198,9 +222,6 @@ public abstract class CompoundList {
             public Listener() {
                 this.dropIndex = -1;
             }
-
-            @Override
-            public void onDoubleClick(MouseEvent event, MetaCompound target) { }
 
             @Override
             public TransferMode[] onDragStart(MouseEvent event, MetaCompound target) {

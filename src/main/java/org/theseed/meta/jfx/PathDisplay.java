@@ -4,7 +4,9 @@
 package org.theseed.meta.jfx;
 
 import org.theseed.jfx.ResizableController;
+import org.theseed.meta.controllers.CompoundList;
 import org.theseed.meta.controllers.MetaCompound;
+import org.theseed.meta.controllers.PathwayTable;
 import org.theseed.meta.controllers.ReactionTrigger;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
@@ -28,6 +30,10 @@ public class PathDisplay extends ResizableController {
     private MetaModel model;
     /** path being displayed */
     private Pathway path;
+    /** table control manager */
+    protected PathwayTable tableController;
+    /** input compound manager */
+    protected CompoundList inputController;
 
     // CONTROLS
 
@@ -64,7 +70,18 @@ public class PathDisplay extends ResizableController {
      * @param model		underlying metabolic model
      */
     public void init(Pathway path, ModelManager parent) {
-        // TODO code for init
+        // Save the path and model.
+        this.path = path;
+        this.model = parent.getModel();
+        // Set up the table control.
+        this.tableController = new PathwayTable(this.tblPathway, this.path, this.model);
+        // Set up the list of input compounds.
+        this.inputController = new CompoundList.Normal(this.lstInputCompounds, parent);
+        // Load the input compounds.  Note that this will only be uncommon compounds.
+        var inputs = path.getUncommonInputs(this.model);
+        var inputItems = this.lstInputCompounds.getItems();
+        inputs.sortedCounts().stream().forEach(x -> inputItems.add(parent.getCompound(x.getKey())));
+        // TODO compute and load the triggers
     }
 
     /**
