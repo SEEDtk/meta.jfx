@@ -246,10 +246,11 @@ public class CompoundDisplayCell extends ListCell<MetaCompound> {
     @Override
     public void updateItem(MetaCompound item, boolean empty) {
         super.updateItem(item, empty);
+        this.setText(null);
         if (! empty && item != null) {
-            this.setText(item.toString());
+            this.setGraphic(item.getRendering());
         } else {
-            this.setText(null);
+            this.setGraphic(null);
         }
     }
 

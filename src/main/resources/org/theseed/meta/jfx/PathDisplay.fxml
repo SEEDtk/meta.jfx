@@ -5,8 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.GridPane?>
 
-
-<GridPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8">
+<GridPane hgap="5.0" minHeight="600.0" minWidth="1000.0" stylesheets="@mods.css" vgap="5.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.theseed.meta.jfx.PathDisplay">
    <rowConstraints>
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="500.0" vgrow="ALWAYS" />
@@ -17,8 +16,7 @@
    <children>
       <HBox prefHeight="100.0" prefWidth="200.0" spacing="10.0">
          <children>
-            <Button mnemonicParsing="false" onAction="#loadPathFile" prefWidth="100.0" text="Load New Path" />
-            <Button fx:id="btnSavePath" mnemonicParsing="false" onAction="#savePathFile" prefWidth="100.0" text="Save Path" />
+            <Button mnemonicParsing="false" onAction="#savePathFile" prefWidth="100.0" text="Save Path" />
          </children>
       </HBox>
       <SplitPane dividerPositions="0.65" prefHeight="160.0" prefWidth="200.0" GridPane.rowIndex="1">

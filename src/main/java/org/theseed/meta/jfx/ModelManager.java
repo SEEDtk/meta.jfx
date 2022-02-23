@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -17,8 +18,14 @@ import org.slf4j.LoggerFactory;
 import org.theseed.genome.Genome;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.ResizableController;
+import org.theseed.metabolism.AvoidPathwayFilter;
 import org.theseed.metabolism.MetaModel;
+import org.theseed.metabolism.Pathway;
+import org.theseed.metabolism.PathwayFilter;
 import org.theseed.metabolism.mods.ModifierList;
+import org.theseed.utils.ParseFailureException;
+
+import com.github.cliftonlabs.json_simple.JsonException;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -32,6 +39,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
@@ -70,6 +78,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     /** extension filter for all files */
     private static final FileChooser.ExtensionFilter ALL_FILES =
             new FileChooser.ExtensionFilter("All Files", "*.*");
+    private static final FileChooser.ExtensionFilter PATH_FILES =
+            new FileChooser.ExtensionFilter("All Files", "*.path.json");
 
     // CONTROLS
 
@@ -124,6 +134,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     /** compute-path button */
     @FXML
     private Button btnComputePath;
+
+    /** load-and-display-path button */
+    @FXML
+    private Button btnLoadPath;
 
 
     /**
@@ -344,6 +358,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         boolean ok = false;
         try {
             ok = this.setupModel(newDir);
+            // Save the directory if it's valid.
+            if (ok)
+                this.modelDir = newDir;
         } catch (IOException e) {
             // An I/O error here just means a bad directory.  We ignore it.
         }
@@ -419,7 +436,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 // Denote we have successfully loaded a model.
                 String message = String.format("%d reactions loaded from model for %s.",
                         this.model.getReactionCount(), baseGenome.toString());
-                this.txtMessageBuffer.setText(message);
+                showStatus(message);
                 this.txtModelDirectory.setText(newDir.getName());
                 retVal = true;
             }
@@ -501,7 +518,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         Set<MetaCompound> compounds = commons.stream().map(x -> this.getCompound(x)).filter(x -> x != null)
                 .collect(Collectors.toCollection(TreeSet<MetaCompound>::new));
         this.availableCompounds.addAll(compounds);
-        this.txtMessageBuffer.setText(String.format("%d common compounds in this model.", compounds.size()));
+        this.showStatus(String.format("%d common compounds in this model.", compounds.size()));
     }
 
     /**
@@ -545,11 +562,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         }
     }
 
-    @Override
-    public MetaCompound getCompound(String id) {
-        return this.metaCompoundMap.get(id);
-    }
-
     /**
      * Specify a new flow modification file for the path.
      *
@@ -572,8 +584,13 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             else {
                 try {
                     this.flowModifier = new ModifierList(flowFile);
+                    // Reset the model and apply the new modifier list.
+                    this.model.resetFlow();
+                    int modCount = this.flowModifier.apply(this.model);
+                    this.showStatus(String.format("%d reactions modified by flow modifiers.",
+                            modCount, this.flowModifier.size()));
+                    this.txtFlowFile.setText(flowFile.getName());
                     done = true;
-                    this.txtMessageBuffer.setText(String.format("%d flow modifiers loaded.", this.flowModifier.size()));
                 } catch (IOException e) {
                     BaseController.messageBox(AlertType.ERROR, "Invalid Flow File", e.toString());
                 }
@@ -588,9 +605,112 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      */
     @FXML
     protected void computePath(ActionEvent event) {
-    	// Compute the pathway.
-        // TODO compute the path
-    	// TODO display the path in the PathDisplay
+        var items = lstPath.getItems();
+        if (items.size() < 2)
+            BaseController.messageBox(AlertType.WARNING, "Error Computing Path",
+                    "At least two metabolites required in path list.");
+        else try {
+            // Create the avoid filters.
+            var avoidItems = this.lstAvoid.getItems();
+            PathwayFilter[] filters;
+            if (avoidItems.size() == 0)
+                filters = new PathwayFilter[0];
+            else {
+                String[] avoids = this.lstAvoid.getItems().stream().map(x -> x.getId()).toArray(String[]::new);
+                filters = new PathwayFilter[] { new AvoidPathwayFilter(avoids) };
+            }
+            // Get the first two metabolites and start the path.
+            Iterator<MetaCompound> iter = items.iterator();
+            String start = iter.next().getId();
+            String next = iter.next().getId();
+            this.showStatus("Searching for path from " + start + " to " + next + ".");
+            Pathway path = model.getPathway(start, next, filters);
+            // Loop through the rest of the metabolites.
+            while (path != null && iter.hasNext()) {
+                next = iter.next().getId();
+                this.showStatus("Extending pathway to " + next + ".");
+                path = model.extendPathway(path, next, filters);
+            }
+            // Check for a looped path.
+            if (path != null && this.chkLooped.isSelected()) {
+                this.showStatus("Looping pathway back to " + start + ".");
+                path = model.loopPathway(path, start, filters);
+            }
+            if (path == null)
+                BaseController.messageBox(AlertType.WARNING, "Error Computing Path", "Could not find a pathway to " + next + ".");
+            else {
+                this.showStatus(String.format("%d reactions found in pathway.", path.size()));
+                this.displayPath(path);
+            }
+        } catch (Exception e) {
+            BaseController.messageBox(AlertType.ERROR, "Error Computing Path", e.toString());
+        }
     }
 
+    /**
+     * Load a pathway from a file and display it.
+     *
+     * @param event		event that triggered this action
+     */
+    @FXML
+    protected void loadPathFile(ActionEvent event) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select Pathway File");
+        chooser.setInitialDirectory(this.modelDir);
+        // The preferred extension for the pathway files is .path.json.
+        chooser.getExtensionFilters().addAll(PATH_FILES, ALL_FILES);
+        // We will loop until we find a good file or the user cancels out.
+        boolean done = false;
+        while (! done) {
+            // Ask the user for the file.
+            File pathFile = chooser.showOpenDialog(this.getStage());
+            if (pathFile == null)
+                done = true;
+            else {
+                try {
+                    Pathway path = new Pathway(pathFile, this.model);
+                    this.displayPath(path);
+                    done = true;
+                } catch (IOException | ParseFailureException | JsonException e) {
+                    BaseController.messageBox(AlertType.ERROR, "Invalid Flow File", e.toString());
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Display a pathway in the pathway viewer.
+     *
+     * @param path		pathway to display
+     *
+     * @throws IOException
+     */
+    private void displayPath(Pathway path) throws IOException {
+        Stage pathStage = new Stage();
+        PathDisplay pathViewer = (PathDisplay) BaseController.loadFXML(App.class, "PathDisplay", pathStage);
+        pathViewer.init(path, this);
+        pathStage.show();
+    }
+
+    /**
+     * Display a message in the status bar.
+     *
+     * @param message		message to display
+     */
+    private void showStatus(String message) {
+        this.txtMessageBuffer.setText(message);
+    }
+
+    @Override
+    public MetaCompound getCompound(String id) {
+        return this.metaCompoundMap.get(id);
+    }
+
+    /**
+     * @return the metabolic model being managed
+     */
+    public MetaModel getModel() {
+        return this.model;
+    }
 }

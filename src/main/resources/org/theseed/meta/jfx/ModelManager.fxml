@@ -21,16 +21,17 @@
       <Label text="Choose a Compound" GridPane.columnIndex="3" GridPane.rowIndex="2" GridPane.valignment="TOP" />
       <TextField fx:id="txtSearchCompound" prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="2" GridPane.valignment="TOP" />
       <ListView fx:id="lstCompounds" maxHeight="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="5" GridPane.rowIndex="2" GridPane.rowSpan="2" />
-      <Label text="Model Directory" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.valignment="TOP" />
+      <Label text="Flow Modifiers" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.valignment="TOP" />
       <HBox GridPane.columnIndex="2" GridPane.rowIndex="3">
          <children>
             <TextField fx:id="txtFlowFile" editable="false" styleClass="readOnly" />
             <Button fx:id="btnSelectFlow" mnemonicParsing="false" onAction="#selectFlowFile" text="..." />
          </children>
       </HBox>
-      <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="4" GridPane.rowIndex="3">
+      <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" GridPane.columnIndex="4" GridPane.rowIndex="3">
          <children>
             <Button fx:id="btnShowCommons" mnemonicParsing="false" onAction="#showCommonCompounds" prefWidth="200.0" text="Show Common Compounds" textAlignment="CENTER" />
+            <Button fx:id="btnLoadPath" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#loadPathFile" prefWidth="200.0" text="Display Saved Path" />
          </children>
       </VBox>
       <TextField fx:id="txtMessageBuffer" editable="false" maxWidth="1.7976931348623157E308" styleClass="readOnly" GridPane.columnIndex="1" GridPane.columnSpan="6" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" />

@@ -5,6 +5,12 @@ package org.theseed.meta.jfx;
 
 import org.apache.commons.lang3.StringUtils;
 
+import javafx.scene.Node;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+
 /**
  * This object contains a compound name and BiGG ID.  It is used to represent a compound in an observable
  * list.  The toString displays both the name and ID, and there is a filtering method for selecting a
@@ -20,8 +26,6 @@ public class MetaCompound implements Comparable<MetaCompound> {
     private String name;
     /** ID of compound */
     private String id;
-    /** string representation */
-    private String fullText;
 
     /**
      * Construct a new metabolic compound object.
@@ -30,12 +34,8 @@ public class MetaCompound implements Comparable<MetaCompound> {
      * @param name		name of compound
      */
     public MetaCompound(String id, String name) {
-        // We pre-generate the string representation for performance.
-        this.fullText = id + ": " + name;
         this.id = id;
-        // We save the lower-case version of the name to simplify matching.  Note we must do this AFTER
-        // we generate the full-text name.
-        this.name = name.toLowerCase();
+        this.name = name;
     }
 
     /**
@@ -44,7 +44,7 @@ public class MetaCompound implements Comparable<MetaCompound> {
      * @param string	search string for filtering, converted to lower-case
      */
     public boolean matches(String string) {
-        return StringUtils.contains(this.name, string) || StringUtils.startsWith(this.id.toLowerCase(), string);
+        return StringUtils.contains(this.name.toLowerCase(), string) || StringUtils.startsWith(this.id.toLowerCase(), string);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class MetaCompound implements Comparable<MetaCompound> {
 
     @Override
     public String toString() {
-        return this.fullText;
+        return this.id + ": " + this.name;
     }
 
     @Override
@@ -93,6 +93,25 @@ public class MetaCompound implements Comparable<MetaCompound> {
      */
     public String getId() {
         return this.id;
+    }
+
+    /**
+     * @return the name of this compound
+     */
+    public String getName() {
+        return this.name;
+    }
+
+    /**
+     * @return the rendering of this compound
+     */
+    public Node getRendering() {
+        // We pre-generate the display representation for performance.
+        Text idText = new Text(this.id);
+        Font defaultFont = idText.getFont();
+        idText.setFont(Font.font(defaultFont.getName(), FontWeight.BOLD, defaultFont.getSize()));
+        Text nameText = new Text(": " + this.name);
+        return new TextFlow(idText, nameText);
     }
 
 }
