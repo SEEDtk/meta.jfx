@@ -4,10 +4,12 @@
 package org.theseed.meta.jfx;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -21,6 +23,7 @@ import org.theseed.jfx.ResizableController;
 import org.theseed.meta.controllers.CompoundList;
 import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
+import org.theseed.meta.jfx.PathFinder.IParms;
 import org.theseed.metabolism.AvoidPathwayFilter;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
@@ -36,7 +39,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ListView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -44,6 +47,7 @@ import javafx.stage.Stage;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 
 /**
  * This is the main window for the metabolic modeling utility.  It displays the main form, which allows
@@ -53,7 +57,7 @@ import javafx.scene.control.Button;
  * @author Bruce Parrello
  *
  */
-public class ModelManager extends ResizableController implements ICompoundFinder {
+public class ModelManager extends ResizableController implements ICompoundFinder, IParms {
 
     // FIELDS
     /** logging facility */
@@ -64,6 +68,12 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     private File modelDir;
     /** current flow file */
     private File flowFile;
+    /** current loaded path */
+    private Pathway savedPath;
+    /** current loaded subsystem */
+    private Collection<Pathway> subsysPaths;
+    /** array of path filters */
+    private PathwayFilter[] filters;
     /** visible list of compounds for the current model */
     private ObservableList<MetaCompound> availableCompounds;
     /** map of compound IDs to compound descriptors */
@@ -82,8 +92,11 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     /** extension filter for all files */
     public static final FileChooser.ExtensionFilter ALL_FILES =
             new FileChooser.ExtensionFilter("All Files", "*.*");
+    /** extension filter for path files */
     public static final FileChooser.ExtensionFilter PATH_FILES =
-            new FileChooser.ExtensionFilter("All Files", "*.path.json");
+            new FileChooser.ExtensionFilter("Pathway Files", Pathway.FILE_EXT);
+    /** filename filter for path files */
+    public static final FileFilter PATH_FILE_FILTER = new Pathway.FileFilter();
 
     // CONTROLS
 
@@ -111,9 +124,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private ListView<MetaCompound> lstAvoid;
 
-    /** checkbox for a looped path */
+    /** select box for type of path */
     @FXML
-    private CheckBox chkLooped;
+    private ChoiceBox<PathFinder.Type> cmbPathStyle;
 
     /** clear-path button */
     @FXML
@@ -131,6 +144,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private TextField txtFlowFile;
 
+    /** path-file name */
+    @FXML
+    private TextField txtPathFile;
+
     /** flow-file select button */
     @FXML
     private Button btnSelectFlow;
@@ -139,13 +156,29 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private Button btnComputePath;
 
-    /** load-and-display-path button */
+    /** select-path button */
     @FXML
-    private Button btnLoadPath;
+    private Button btnSelectPath;
+
+    /** display-path button */
+    @FXML
+    private Button btnShowPath;
 
     /** refresh-flow-file button */
     @FXML
     private Button btnFlowRefresh;
+
+    /** want-loop checkbox */
+    @FXML
+    private CheckBox chkLooped;
+
+    /** select-subsystem button */
+    @FXML
+    private Button btnSelectSubsys;
+
+    /** current-subsystem display */
+    @FXML
+    private TextField txtSubsysDirectory;
 
 
     /**
@@ -223,6 +256,11 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.btnShowCommons.setDisable(! valid);
         this.btnSelectFlow.setDisable(! valid);
         this.btnFlowRefresh.setDisable(true);
+        this.cmbPathStyle.setDisable(! valid);
+        this.btnShowPath.setDisable(! valid);
+        this.btnSelectPath.setDisable(! valid);
+        this.chkLooped.setDisable(! valid);
+        this.btnSelectSubsys.setDisable(! valid);
     }
 
     /**
@@ -252,8 +290,13 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 this.filterList("");
                 this.clearCurrentPath();
                 this.clearCurrentAvoid();
-                this.chkLooped.setSelected(false);
+                this.cmbPathStyle.getSelectionModel().clearAndSelect(0);
+                this.txtFlowFile.setText("");
+                this.txtSubsysDirectory.setText("");
+                this.txtPathFile.setText("");
+                this.savedPath = null;
                 this.flowFile = null;
+                this.subsysPaths = null;
                 this.txtFlowFile.setText("");
                 // Denote we have successfully loaded a model.
                 String message = String.format("%d reactions loaded from model for %s.",
@@ -344,11 +387,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     /**
      * Allow the user to select the new model directory.
-     *
-     * @param event		event that triggered this action
      */
     @FXML
-    protected void selectModelDirectory(ActionEvent event) {
+    protected void selectModelDirectory() {
         DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Select a Model Directory");
         // Start at the old model directory, or the current directory if there was none.
@@ -385,11 +426,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     /**
      * Specify a new flow modification file for the path.
-     *
-     * @param event		triggering event
      */
     @FXML
-    protected void selectFlowFile(ActionEvent event) {
+    protected void selectFlowFile() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Select Flow Modification File");
         chooser.setInitialDirectory(this.modelDir);
@@ -415,11 +454,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     /**
      * Refresh the flow-modification file from disk.  Presumably, the user has just updated it.
-     *
-     * @param event		event that triggered this action
      */
     @FXML
-    protected void refreshFlowFile(ActionEvent event) {
+    protected void refreshFlowFile() {
         try {
             this.loadFlowFile(this.flowFile);
         } catch (IOException e) {
@@ -449,44 +486,24 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     /**
      * Compute and display a path based on the current parameters.
-     *
-     * @param event		triggering event
-     */
+    */
     @FXML
-    protected void computePath(ActionEvent event) {
-        var items = lstPath.getItems();
-        if (items.size() < 2)
-            BaseController.messageBox(AlertType.WARNING, "Error Computing Path",
-                    "At least two metabolites required in path list.");
-        else try {
+    protected void computePath() {
+        try {
             // Create the avoid filters.
             var avoidItems = this.lstAvoid.getItems();
-            PathwayFilter[] filters;
             if (avoidItems.size() == 0)
-                filters = new PathwayFilter[0];
+                this.filters = new PathwayFilter[0];
             else {
                 String[] avoids = this.lstAvoid.getItems().stream().map(x -> x.getId()).toArray(String[]::new);
-                filters = new PathwayFilter[] { new AvoidPathwayFilter(avoids) };
+                this.filters = new PathwayFilter[] { new AvoidPathwayFilter(avoids) };
             }
-            // Get the first two metabolites and start the path.
-            Iterator<MetaCompound> iter = items.iterator();
-            String start = iter.next().getId();
-            String next = iter.next().getId();
-            this.showStatus("Searching for path from " + start + " to " + next + ".");
-            Pathway path = model.getPathway(start, next, filters);
-            // Loop through the rest of the metabolites.
-            while (path != null && iter.hasNext()) {
-                next = iter.next().getId();
-                this.showStatus("Extending pathway to " + next + ".");
-                path = model.extendPathway(path, next, filters);
-            }
-            // Check for a looped path.
-            if (path != null && this.chkLooped.isSelected()) {
-                this.showStatus("Looping pathway back to " + start + ".");
-                path = model.loopPathway(path, start, filters);
-            }
+            // Create the path finder.
+            PathFinder finder = this.cmbPathStyle.getSelectionModel().getSelectedItem().create(this);
+            // Get the path.
+            Pathway path = finder.computePath();
             if (path == null)
-                BaseController.messageBox(AlertType.WARNING, "Error Computing Path", "Could not find a pathway to " + next + ".");
+                BaseController.messageBox(AlertType.WARNING, "Error Computing Path", "Could not the desired pathway.");
             else {
                 this.showStatus(String.format("%d reactions found in pathway.", path.size()));
                 this.displayPath(path);
@@ -497,12 +514,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     }
 
     /**
-     * Load a pathway from a file and display it.
-     *
-     * @param event		event that triggered this action
+     * Load a pathway from a user-selected file.
      */
     @FXML
-    protected void loadPathFile(ActionEvent event) {
+    protected void selectPathFile() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Select Pathway File");
         chooser.setInitialDirectory(this.modelDir);
@@ -517,15 +532,94 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 done = true;
             else {
                 try {
-                    Pathway path = new Pathway(pathFile, this.model);
-                    this.displayPath(path);
+                    this.savedPath = new Pathway(pathFile, this.model);
+                    this.txtPathFile.setText(pathFile.getName());
                     done = true;
                 } catch (IOException | ParseFailureException | JsonException e) {
-                    BaseController.messageBox(AlertType.ERROR, "Invalid Flow File", e.toString());
+                    BaseController.messageBox(AlertType.ERROR, "Invalid Path File", e.toString());
                 }
             }
         }
+    }
 
+    /**
+     * Load a subsystem from a subsystem directory.  The subsystem in here is actually a set of
+     * path files that are stored as a collection of pathways.
+     */
+    @FXML
+    protected void selectSubsysDirectory() {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Select Subsystem Directory");
+        chooser.setInitialDirectory(this.modelDir);
+        // Loop until we find a directory or the user cancels out.
+        boolean found = false;
+        while (! found) {
+            File subDir = chooser.showDialog(this.getStage());
+            if (subDir == null) {
+                // Here the user is canceling out.
+                found = true;
+            } else {
+                // Make sure that if we retry, we start from here.
+                chooser.setInitialDirectory(subDir);
+                // Test the directory.
+                try {
+                    found = this.loadSubsys(subDir);
+                    if (! found) {
+                        // Directory was invalid.  Try again.
+                        BaseController.messageBox(Alert.AlertType.WARNING, "Error Loading Subsystem",
+                                subDir + " does not have any path.json files.");
+                    }
+                } catch (Exception e) {
+                    BaseController.messageBox(AlertType.ERROR, "Error Loading Subsystem", e.toString());
+                }
+            }
+
+        }
+    }
+
+    /**
+     * Load a subsystem's paths into memory.
+     *
+     * @param subDir	directory containing the subsystem's paths
+     *
+     * @return TRUE if successful, FALSE if no paths were found
+     *
+     * @throws IOException
+     * @throws JsonException
+     * @throws ParseFailureException
+     */
+    private boolean loadSubsys(File subDir) throws IOException, ParseFailureException, JsonException {
+        File[] pathFiles = subDir.listFiles(PATH_FILE_FILTER);
+        boolean retVal = false;
+        if (pathFiles.length > 0) {
+            // Here we have paths to load.
+            var pathList = new ArrayList<Pathway>(pathFiles.length);
+            for (File pathFile : pathFiles) {
+                Pathway path = new Pathway(pathFile, this.model);
+                pathList.add(path);
+            }
+            // Save the loaded paths.
+            String subsysName = subDir.getName();
+            this.txtMessageBuffer.setText(String.format("%d pathways loaded from subsystem %s.", pathList.size(),
+                    subsysName));
+            this.txtSubsysDirectory.setText(subsysName);
+            this.subsysPaths = pathList;
+        }
+        return retVal;
+    }
+
+    /**
+     * Display the currently-loaded path.
+     */
+    @FXML
+    protected void showPathFile() {
+        if (savedPath == null)
+            BaseController.messageBox(AlertType.ERROR, "Path Display", "No path loaded.");
+        else try {
+            this.displayPath(this.savedPath);
+        } catch (Exception e) {
+            BaseController.messageBox(AlertType.ERROR, "Path Display Error", e.toString());
+        }
     }
 
     /**
@@ -559,6 +653,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     /**
      * @return the metabolic model being managed
      */
+    @Override
     public MetaModel getModel() {
         return this.model;
     }
@@ -569,4 +664,48 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     public File getModelDir() {
         return this.modelDir;
     }
+
+    @Override
+    public List<MetaCompound> getCompounds() {
+        return this.lstPath.getItems();
+    }
+
+    @Override
+    public PathwayFilter[] getFilters() {
+        return this.filters;
+    }
+
+    @Override
+    public Collection<Pathway> getStartPathways() {
+        Collection<Pathway> retVal = this.subsysPaths;
+        if (retVal == null) {
+            // There is no subsystem selected.  Ask the user to select one.
+            this.selectSubsysDirectory();
+            retVal = this.subsysPaths;
+        }
+        return retVal;
+    }
+
+    @Override
+    public Pathway getStartPathway() {
+        Pathway retVal = this.savedPath;
+        if (retVal == null) {
+            // There is no saved pathway.  Ask the user to select one.
+            this.selectPathFile();
+            retVal = this.savedPath;
+        }
+        return retVal;
+    }
+
+    @Override
+    public void showMessage(String message) {
+        this.txtMessageBuffer.setText(message);
+
+    }
+
+    @Override
+    public boolean getLoopFlag() {
+        return this.chkLooped.isSelected();
+    }
+
 }
