@@ -23,7 +23,6 @@ import org.theseed.jfx.ResizableController;
 import org.theseed.meta.controllers.CompoundList;
 import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
-import org.theseed.meta.jfx.PathFinder.IParms;
 import org.theseed.metabolism.AvoidPathwayFilter;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
@@ -57,7 +56,8 @@ import javafx.scene.control.CheckBox;
  * @author Bruce Parrello
  *
  */
-public class ModelManager extends ResizableController implements ICompoundFinder, IParms {
+public class ModelManager extends ResizableController implements ICompoundFinder, PathFinder.IParms,
+        SubsystemBuilder.IParms {
 
     // FIELDS
     /** logging facility */
@@ -68,6 +68,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     private File modelDir;
     /** current flow file */
     private File flowFile;
+    /** current subsystem directory */
+    private File subsysDir;
     /** current loaded path */
     private Pathway savedPath;
     /** current loaded subsystem */
@@ -94,7 +96,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             new FileChooser.ExtensionFilter("All Files", "*.*");
     /** extension filter for path files */
     public static final FileChooser.ExtensionFilter PATH_FILES =
-            new FileChooser.ExtensionFilter("Pathway Files", Pathway.FILE_EXT);
+            new FileChooser.ExtensionFilter("Pathway Files", "*" + Pathway.FILE_EXT);
     /** filename filter for path files */
     public static final FileFilter PATH_FILE_FILTER = new Pathway.FileFilter();
 
@@ -180,6 +182,14 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private TextField txtSubsysDirectory;
 
+    /** update-subsystem button */
+    @FXML
+    private Button btnUpdateSubsystem;
+
+    /** flag indicating how to start new subsystem paths */
+    @FXML
+    private CheckBox chkPathSubsys;
+
 
     /**
      * This listener updates the compound list based on the content of the text property in the
@@ -261,6 +271,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.btnSelectPath.setDisable(! valid);
         this.chkLooped.setDisable(! valid);
         this.btnSelectSubsys.setDisable(! valid);
+        this.btnUpdateSubsystem.setDisable(! valid);
+        this.chkPathSubsys.setDisable(! valid);
     }
 
     /**
@@ -297,6 +309,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 this.savedPath = null;
                 this.flowFile = null;
                 this.subsysPaths = null;
+                this.subsysDir = null;
                 this.txtFlowFile.setText("");
                 // Denote we have successfully loaded a model.
                 String message = String.format("%d reactions loaded from model for %s.",
@@ -578,6 +591,30 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     }
 
     /**
+     * This method updates the current subsystem. If no subsystem directory is specified, the
+     * user will will be asked to specify one.  In a subsystem update, we create a path for
+     * each compound in the main pathway list, and store it in the subsystem directory.
+     */
+    @FXML
+    protected void updateSubsystem() {
+        // Set up the subsystem builder of the appropriate type.
+        try {
+            SubsystemBuilder builder;
+            if (this.chkPathSubsys.isSelected())
+                builder = new PathSubsystemBuilder(this);
+            else
+                builder = new SimpleSubsystemBuilder(this);
+            boolean ok = builder.updateSubsystem();
+            if (ok) {
+                // The subsystem has updated, so we need to reload it.
+                this.loadSubsys(this.subsysDir);
+            }
+        } catch (IOException | ParseFailureException | JsonException e) {
+            BaseController.messageBox(AlertType.ERROR, "Error Building Subsystem", e.toString());
+        }
+    }
+
+    /**
      * Load a subsystem's paths into memory.
      *
      * @param subDir	directory containing the subsystem's paths
@@ -600,10 +637,12 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             }
             // Save the loaded paths.
             String subsysName = subDir.getName();
+            this.subsysPaths = pathList;
             this.txtMessageBuffer.setText(String.format("%d pathways loaded from subsystem %s.", pathList.size(),
                     subsysName));
+            // Save the subsystem directory.
             this.txtSubsysDirectory.setText(subsysName);
-            this.subsysPaths = pathList;
+            this.subsysDir = subDir;
         }
         return retVal;
     }
@@ -676,7 +715,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     }
 
     @Override
-    public Collection<Pathway> getStartPathways() {
+    public Collection<Pathway> getSubsysPathways() {
         Collection<Pathway> retVal = this.subsysPaths;
         if (retVal == null) {
             // There is no subsystem selected.  Ask the user to select one.
@@ -706,6 +745,17 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @Override
     public boolean getLoopFlag() {
         return this.chkLooped.isSelected();
+    }
+
+    @Override
+    public File getSubsysDirectory() {
+        File retVal = this.subsysDir;
+        if (retVal == null) {
+            // There is no subsystem selected.  Ask the user to select one.
+            this.selectSubsysDirectory();
+            retVal = this.subsysDir;
+        }
+        return retVal;
     }
 
 }

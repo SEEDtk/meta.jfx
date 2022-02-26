@@ -73,18 +73,28 @@
           </children>
       </VBox>
       <Label text="Subsys Directory" GridPane.columnIndex="1" GridPane.rowIndex="5" GridPane.valignment="TOP" />
-      <HBox alignment="CENTER_LEFT" GridPane.columnIndex="2"  GridPane.rowIndex="5">
+      <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="5">
          <children>
-            <TextField fx:id="txtSubsysDirectory" editable="false" styleClass="readOnly" />
-            <Button fx:id="btnSelectSubsys" mnemonicParsing="false" onAction="#selectSubsysDirectory" text="..." />
+            <HBox GridPane.columnIndex="2" GridPane.rowIndex="5">
+               <children>
+                  <TextField fx:id="txtSubsysDirectory" editable="false" styleClass="readOnly" />
+                  <Button fx:id="btnSelectSubsys" mnemonicParsing="false" onAction="#selectSubsysDirectory" text="..." />
+               </children>
+            </HBox>
+            <Button fx:id="btnUpdateSubsystem" mnemonicParsing="false" onAction="#updateSubsystem" prefWidth="150.0" text="Update Subsystem" />
          </children>
-      </HBox>
+      </VBox>
       <HBox alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" prefHeight="30.0" prefWidth="200.0" spacing="10.0" GridPane.columnIndex="5" GridPane.hgrow="ALWAYS">
          <children>
             <CheckBox fx:id="chkLooped" mnemonicParsing="false" text="Looped" />
             <Button fx:id="btnComputePath" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#computePath" style="-fx-font-weight: bold;" text="COMPUTE PATH" />
          </children>
       </HBox>
+      <VBox prefHeight="60.0" prefWidth="100.0" GridPane.columnIndex="3" GridPane.rowIndex="4">
+         <children>
+            <CheckBox fx:id="chkPathSubsys" mnemonicParsing="false" text="Use Saved Path in Subsystem Update" wrapText="true" />
+         </children>
+      </VBox>
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -93,8 +103,8 @@
       <ColumnConstraints />
       <ColumnConstraints />
       <ColumnConstraints />
-      <ColumnConstraints minWidth="10.0" />
-      <ColumnConstraints minWidth="10.0" />
+      <ColumnConstraints minWidth="10.0" prefWidth="150.0" />
+      <ColumnConstraints minWidth="10.0" prefWidth="200.0" />
       <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="10.0" prefWidth="100.0" />
       <ColumnConstraints />
    </columnConstraints>

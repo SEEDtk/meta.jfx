@@ -27,7 +27,7 @@ public class SubsystemPathFinder extends PathFinder {
     public SubsystemPathFinder(IParms processor) throws ParseFailureException, IOException, JsonException {
         super(processor);
         // Get the subsystem pathways.
-        this.subsysPaths = processor.getStartPathways();
+        this.subsysPaths = processor.getSubsysPathways();
         if (this.subsysPaths == null) {
             // Here the user cancelled out.
             throw new ParseFailureException("A subsystem is required to do a subsystem path search.");
