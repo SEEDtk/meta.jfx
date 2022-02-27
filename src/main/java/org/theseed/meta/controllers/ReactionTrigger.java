@@ -52,14 +52,21 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
     public int compareTo(ReactionTrigger o) {
         int retVal = this.getTypeIdx() - o.getTypeIdx();
         if (retVal == 0) {
-            retVal = this.sortName.compareTo(o.sortName);
+            retVal = this.getTarget().compareTo(o.getTarget());
             if (retVal == 0) {
-                retVal = this.feat.compareTo(o.feat);
+                retVal = this.sortName.compareTo(o.sortName);
                 if (retVal == 0)
-                    retVal = this.reaction.compareTo(o.reaction);
+                    retVal = this.feat.compareTo(o.feat);
             }
         }
         return retVal;
+    }
+
+    /**
+     * @return the BiGG ID of the reaction being triggered
+     */
+    public String getReactionId() {
+        return this.reaction.getBiggId();
     }
 
     /**
@@ -76,7 +83,7 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
     @Override
     public String toString() {
         StringBuilder retVal = new StringBuilder(100);
-        retVal.append(this.reaction.getBiggId());
+        retVal.append(this.getTarget());
         retVal.append(" <== ");
         retVal.append(this.feat.getId());
         if (! this.sortName.equals(NO_NAME))
@@ -85,6 +92,11 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
         retVal.append(feat.getPegFunction());
         return retVal.toString();
     }
+
+    /**
+     * @return the string to display for the trigger target
+     */
+    protected abstract String getTarget();
 
     @Override
     public int hashCode() {
@@ -148,6 +160,11 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
             return new ImageView(MAIN_ICON);
         }
 
+        @Override
+        protected String getTarget() {
+            return this.getReactionId();
+        }
+
     }
 
     /**
@@ -157,9 +174,20 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
 
         /** icon for a mainline trigger */
         private static Image BRANCH_ICON = new Image(App.class.getResourceAsStream("minus-16.png"));
+        /** compound being consumed by this branch */
+        private String compound;
 
-        public Branch(String fid, Reaction reaction, MetaModel model) {
+        /**
+         * Create a reaction trigger for a branch reaction.
+         *
+         * @param fid		feature ID triggering the reaction
+         * @param reaction	reaction being triggered
+         * @param model		underlying model
+         * @param compound	BiGG ID of the compound being consumed
+         */
+        public Branch(String fid, Reaction reaction, MetaModel model, String compound) {
             super(fid, reaction, model);
+            this.compound = compound;
         }
 
         @Override
@@ -170,6 +198,11 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
         @Override
         protected Node getIcon() {
             return new ImageView(BRANCH_ICON);
+        }
+
+        @Override
+        protected String getTarget() {
+            return this.compound;
         }
 
     }

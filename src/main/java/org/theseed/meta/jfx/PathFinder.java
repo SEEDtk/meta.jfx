@@ -113,7 +113,7 @@ public abstract class PathFinder extends CompoundListAction {
             this.showStatus("Looping pathway back to " + retVal.getInput() + ".");
             retVal = getModel().loopPathway(retVal, this.getFilters());
         }
-        return path;
+        return retVal;
     }
 
 }

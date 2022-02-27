@@ -5,12 +5,16 @@ package org.theseed.meta.jfx;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.ResizableController;
 import org.theseed.meta.controllers.CompoundList;
+import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.meta.controllers.PathwayTable;
 import org.theseed.meta.controllers.ReactionTrigger;
@@ -44,6 +48,8 @@ public class PathDisplay extends ResizableController {
     protected PathwayTable tableController;
     /** input compound manager */
     protected CompoundList inputController;
+    /** output compound manager */
+    protected CompoundList outputController;
     /** saved model directory */
     private File modelDir;
 
@@ -61,6 +67,9 @@ public class PathDisplay extends ResizableController {
     @FXML
     private ListView<MetaCompound> lstInputCompounds;
 
+    /** list control for output compounds */
+    @FXML
+    private ListView<MetaCompound> lstOutputCompounds;
 
 
     public PathDisplay() {
@@ -92,14 +101,34 @@ public class PathDisplay extends ResizableController {
         this.tableController = new PathwayTable(this.tblPathway, this.path, this.model);
         // Set up the list of input compounds.
         this.inputController = new CompoundList.Normal(this.lstInputCompounds, parent);
-        // Load the input compounds.  Note that this will only be uncommon compounds.
-        var inputs = path.getUncommonInputs(this.model);
-        var inputItems = this.lstInputCompounds.getItems();
-        inputs.sortedCounts().stream().forEach(x -> inputItems.add(parent.getCompound(x.getKey())));
+        // Set up the list of output compounds.
+        this.outputController = new CompoundList.Normal(this.lstOutputCompounds, parent);
+        // Load the input compounds.
+        var inputs = path.getInputs(this.model, true);
+        Set<String> inputSet = inputs.sortedCounts().stream().map(x -> x.getKey()).collect(Collectors.toSet());
+        this.fillCompoundList(this.lstInputCompounds, inputSet, parent);
+        // Load the output compounds.
+        var outputs = path.getOutputs();
+        this.fillCompoundList(this.lstOutputCompounds, outputs, parent);
         // Set up the trigger list.
         this.lstTriggers.setCellFactory((x) -> new ReactionTriggerCell());
         Set<ReactionTrigger> triggers = this.getTriggers();
         this.lstTriggers.getItems().addAll(triggers);
+    }
+
+    /**
+     * Fill a list control with the specified compounds.
+     *
+     * @param list			list control to fill
+     * @param compounds		collection of BiGG IDs for the compounds
+     * @param parent		parent compound finder
+     */
+    private void fillCompoundList(ListView<MetaCompound> list, Collection<String> compounds, ICompoundFinder parent) {
+        var items = list.getItems();
+        for (String compound : compounds) {
+            var meta = parent.getCompound(compound);
+            items.add(meta);
+        }
     }
 
     /**
@@ -116,11 +145,12 @@ public class PathDisplay extends ResizableController {
                     .forEach(x -> retVal.add(new ReactionTrigger.Main(x, reaction, this.model)));
         }
         // Loop through the branches.
-        var branchSets = this.path.getBranches(model).values();
-        for (Set<Reaction> branchSet : branchSets) {
-            for (Reaction reaction : branchSet) {
+        var branches = this.path.getBranches(model);
+        for (Map.Entry<String, Set<Reaction>> branchEntry : branches.entrySet()) {
+            String consumed = branchEntry.getKey();
+            for (Reaction reaction : branchEntry.getValue()) {
                 reaction.getTriggers().stream().flatMap(x -> model.fidsOf(x).stream())
-                        .forEach(x -> retVal.add(new ReactionTrigger.Branch(x, reaction, this.model)));
+                        .forEach(x -> retVal.add(new ReactionTrigger.Branch(x, reaction, this.model, consumed)));
             }
         }
         // Return the accumulated triggers.

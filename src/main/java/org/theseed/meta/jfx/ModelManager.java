@@ -72,8 +72,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     private File subsysDir;
     /** current loaded path */
     private Pathway savedPath;
-    /** current loaded subsystem */
-    private Collection<Pathway> subsysPaths;
     /** array of path filters */
     private PathwayFilter[] filters;
     /** visible list of compounds for the current model */
@@ -190,6 +188,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private CheckBox chkPathSubsys;
 
+    /** current subsystem list */
+    @FXML
+    private ListView<Pathway> lstSubsystem;
 
     /**
      * This listener updates the compound list based on the content of the text property in the
@@ -234,10 +235,12 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             newDir = new File(System.getProperty("user.dir"));
         // Set up a change listener on the text field.
         this.txtSearchCompound.textProperty().addListener(this.new SearchListener());
-        // Create cell factories for the three compound lists.
+        // Create controllers for the three compound lists.
         this.avoidListController = new CompoundList.Droppable(this.lstAvoid, this);
         this.pathListController = new CompoundList.Droppable(this.lstPath, this);
         this.searchListController = new CompoundList.Normal(this.lstCompounds, this);
+        // Set up the path styles.
+        this.cmbPathStyle.getItems().addAll(PathFinder.Type.values());
         // Try to load the model.
         boolean ok = false;
         try {
@@ -308,12 +311,13 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 this.txtPathFile.setText("");
                 this.savedPath = null;
                 this.flowFile = null;
-                this.subsysPaths = null;
                 this.subsysDir = null;
                 this.txtFlowFile.setText("");
+                this.lstSubsystem.getItems().clear();
                 // Denote we have successfully loaded a model.
-                String message = String.format("%d reactions loaded from model for %s.",
-                        this.model.getReactionCount(), baseGenome.toString());
+                String message = String.format("%d reactions and %d compounds loaded from model for %s.",
+                        this.model.getReactionCount(), this.model.getMetaboliteCount(),
+                        this.model.getBaseGenome().toString());
                 showStatus(message);
                 this.txtModelDirectory.setText(newDir.getName());
                 retVal = true;
@@ -576,12 +580,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 chooser.setInitialDirectory(subDir);
                 // Test the directory.
                 try {
-                    found = this.loadSubsys(subDir);
-                    if (! found) {
-                        // Directory was invalid.  Try again.
-                        BaseController.messageBox(Alert.AlertType.WARNING, "Error Loading Subsystem",
-                                subDir + " does not have any path.json files.");
-                    }
+                    this.loadSubsys(subDir);
+                    found = true;
                 } catch (Exception e) {
                     BaseController.messageBox(AlertType.ERROR, "Error Loading Subsystem", e.toString());
                 }
@@ -637,12 +637,14 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             }
             // Save the loaded paths.
             String subsysName = subDir.getName();
-            this.subsysPaths = pathList;
+            this.lstSubsystem.getItems().clear();
+            this.lstSubsystem.getItems().addAll(pathList);
             this.txtMessageBuffer.setText(String.format("%d pathways loaded from subsystem %s.", pathList.size(),
                     subsysName));
             // Save the subsystem directory.
             this.txtSubsysDirectory.setText(subsysName);
             this.subsysDir = subDir;
+            retVal = true;
         }
         return retVal;
     }
@@ -686,7 +688,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     @Override
     public MetaCompound getCompound(String id) {
-        return this.metaCompoundMap.get(id);
+        MetaCompound retVal = this.metaCompoundMap.get(id);
+        if (retVal == null)
+            log.error("No compound found for {}.", id);
+        return retVal;
     }
 
     /**
@@ -716,12 +721,13 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     @Override
     public Collection<Pathway> getSubsysPathways() {
-        Collection<Pathway> retVal = this.subsysPaths;
-        if (retVal == null) {
+        if (this.subsysDir == null) {
             // There is no subsystem selected.  Ask the user to select one.
             this.selectSubsysDirectory();
-            retVal = this.subsysPaths;
         }
+        Collection<Pathway> retVal = null;
+        if (this.subsysDir != null)
+            retVal = this.lstSubsystem.getItems();
         return retVal;
     }
 
