@@ -42,13 +42,15 @@ public class BackfillPathFinder extends PathFinder {
         Pathway retVal = this.getModel().getPathway(start, end, this.getFilters());
         // Finish the path through the rest of the compounds.
         retVal = this.finishPath(retVal);
-        // Extend the pathway to the input compound of the starting path.
-        this.showStatus("Extending computed pathway to " + path2.toString() + ".");
-        retVal = this.getModel().extendPathway(retVal, path2.getInput(), this.getFilters());
-        // Now append the starting path to the path being constructed.
-        for (Pathway.Element element : this.path2) {
-            Reaction react = element.getReaction();
-            retVal.add(react, react.getStoich(element.getOutput()));
+        if (retVal != null) {
+            // Extend the pathway to the input compound of the starting path.
+            this.showStatus("Extending computed pathway to " + path2.toString() + ".");
+            retVal = this.getModel().extendPathway(retVal, path2.getInput(), this.getFilters());
+            // Now append the starting path to the path being constructed.
+            for (Pathway.Element element : this.path2) {
+                Reaction react = element.getReaction();
+                retVal.add(react, react.getStoich(element.getOutput()));
+            }
         }
         return retVal;
     }

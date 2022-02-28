@@ -194,6 +194,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private ListView<Pathway> lstSubsystem;
 
+    /** load-subsystem-outputs button */
+    @FXML
+    private Button btnLoadOutputs;
+
     /**
      * This listener updates the compound list based on the content of the text property in the
      * search box.
@@ -243,13 +247,27 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.searchListController = new CompoundList.Normal(this.lstCompounds, this);
         // Set up the path styles.
         this.cmbPathStyle.getItems().addAll(PathFinder.Type.values());
+        // Set up the subsystem methods.
+        this.cmbSubsysUpdateType.getItems().addAll(SubsystemBuilder.Type.values());
+        this.cmbSubsysUpdateType.getSelectionModel().clearAndSelect(0);
         // Try to load the model.
         boolean ok = false;
         try {
             ok = this.setupModel(newDir);
             // Save the directory if it's valid.
-            if (ok)
+            if (ok) {
                 this.modelDir = newDir;
+                // Check for a default flow.
+                String flowName = this.getPref(newDir.getAbsolutePath() + ".flow", "");
+                if (! flowName.isEmpty()) {
+                    // Here we have a default flow.  Make sure it is still valid.
+                    File flowFile = new File(flowName);
+                    if (flowFile.exists()) {
+                        // It's valid, so we load it.
+                        this.loadFlowFile(flowFile);
+                    }
+                }
+            }
         } catch (IOException e) {
             // An I/O error here just means a bad directory.  We ignore it.
         }
@@ -276,8 +294,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.btnSelectPath.setDisable(! valid);
         this.chkLooped.setDisable(! valid);
         this.btnSelectSubsys.setDisable(! valid);
-        this.btnUpdateSubsystem.setDisable(! valid);
+        this.btnUpdateSubsystem.setDisable(true);
         this.cmbSubsysUpdateType.setDisable(! valid);
+        this.btnLoadOutputs.setDisable(true);
     }
 
     /**
@@ -501,6 +520,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.txtFlowFile.setText(userFlowFile.getName());
         this.flowFile = userFlowFile;
         this.btnFlowRefresh.setDisable(false);
+        // Save the flow file name in our preferences.
+        String prefName = this.modelDir.getAbsolutePath() + ".flow";
+        this.setPref(prefName, this.flowFile.getAbsolutePath());
     }
 
     /**
@@ -510,25 +532,32 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     protected void computePath() {
         try {
             // Create the avoid filters.
-            var avoidItems = this.lstAvoid.getItems();
-            if (avoidItems.size() == 0)
-                this.filters = new PathwayFilter[0];
-            else {
-                String[] avoids = this.lstAvoid.getItems().stream().map(x -> x.getId()).toArray(String[]::new);
-                this.filters = new PathwayFilter[] { new AvoidPathwayFilter(avoids) };
-            }
+            this.setupFilters();
             // Create the path finder.
             PathFinder finder = this.cmbPathStyle.getSelectionModel().getSelectedItem().create(this);
             // Get the path.
             Pathway path = finder.computePath();
             if (path == null)
-                BaseController.messageBox(AlertType.WARNING, "Error Computing Path", "Could not the desired pathway.");
+                BaseController.messageBox(AlertType.WARNING, "Error Computing Path", "Could not find the desired pathway.");
             else {
                 this.showStatus(String.format("%d reactions found in pathway.", path.size()));
                 this.displayPath(path);
             }
         } catch (Exception e) {
             BaseController.messageBox(AlertType.ERROR, "Error Computing Path", e.toString());
+        }
+    }
+
+    /**
+     * Process the avoid list to set up the filters for an operation.
+     */
+    private void setupFilters() {
+        var avoidItems = this.lstAvoid.getItems();
+        if (avoidItems.size() == 0)
+            this.filters = new PathwayFilter[0];
+        else {
+            String[] avoids = this.lstAvoid.getItems().stream().map(x -> x.getId()).toArray(String[]::new);
+            this.filters = new PathwayFilter[] { new AvoidPathwayFilter(avoids) };
         }
     }
 
@@ -588,7 +617,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                     BaseController.messageBox(AlertType.ERROR, "Error Loading Subsystem", e.toString());
                 }
             }
-
         }
     }
 
@@ -601,6 +629,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     protected void updateSubsystem() {
         // Set up the subsystem builder of the appropriate type.
         try {
+            // Create the avoid filters.
+            this.setupFilters();
+            // Run the appropriate subsystem builder.
             SubsystemBuilder.Type type = this.cmbSubsysUpdateType.getSelectionModel().getSelectedItem();
             SubsystemBuilder builder = type.create(this);
             boolean ok = builder.updateSubsystem();
@@ -610,6 +641,31 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             }
         } catch (IOException | ParseFailureException | JsonException e) {
             BaseController.messageBox(AlertType.ERROR, "Error Building Subsystem", e.toString());
+        }
+    }
+
+    /**
+     * Load the output compounds from the subsystem into the main path list.
+     */
+    @FXML
+    protected void loadSubsystemOutputs() {
+           // Insure we have a subsystem to load.
+        if (this.subsysDir == null)
+            BaseController.messageBox(AlertType.ERROR, "Error Loading Subsystem", "No subsystem is selected.");
+        else {
+            // Loop through the subsystem paths, adding any output compounds not already in the path list.
+            int count = 0;
+            for (Pathway path : this.lstSubsystem.getItems()) {
+                String compoundId = path.getOutput();
+                if (! this.pathListController.contains(compoundId)) {
+                    MetaCompound compound = this.getCompound(compoundId);
+                    if (compound != null) {
+                        this.lstPath.getItems().add(compound);
+                        count++;
+                    }
+                }
+            }
+            this.showMessage(String.format("%d compounds added to path list.", count));
         }
     }
 
@@ -644,6 +700,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         // Save the subsystem directory.
         this.txtSubsysDirectory.setText(subsysName);
         this.subsysDir = subDir;
+        this.btnLoadOutputs.setDisable(false);
+        this.btnUpdateSubsystem.setDisable(false);
         return true;
     }
 

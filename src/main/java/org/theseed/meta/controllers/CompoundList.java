@@ -126,6 +126,16 @@ public abstract class CompoundList {
     protected abstract void setupListeners();
 
     /**
+     * @return TRUE if the specified compound is already in the list
+     *
+     * @param compound		BiGG ID of the compound to check
+     */
+    public boolean contains(String compound) {
+        // Nothing fancy here, as the list is usually very small.
+        return this.list.getItems().stream().anyMatch(x -> x.getId().equals(compound));
+    }
+
+    /**
      * Set up the cell factory for the list control.  The cell factory creates list cells that use
      * a particular handler for the major events and are of the type CompoundDisplayCell.
      *

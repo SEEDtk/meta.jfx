@@ -82,6 +82,7 @@
                </children>
             </HBox>
             <Button fx:id="btnUpdateSubsystem" mnemonicParsing="false" onAction="#updateSubsystem" prefWidth="150.0" text="Update Subsystem" />
+            <Button fx:id="btnLoadOutputs" mnemonicParsing="false" onAction="#loadSubsystemOutputs" prefWidth="150.0" text="Load Subsys Outputs" />
          </children>
       </VBox>
       <HBox alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" prefHeight="30.0" prefWidth="200.0" spacing="10.0" GridPane.columnIndex="5" GridPane.hgrow="ALWAYS">
