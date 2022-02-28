@@ -1,13 +1,14 @@
 /**
  *
  */
-package org.theseed.meta.jfx;
+package org.theseed.meta.finders;
 
 import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.meta.controllers.MetaCompound;
+import org.theseed.meta.jfx.IModelManager;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.PathwayFilter;
 

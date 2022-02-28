@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.meta.jfx;
+package org.theseed.meta.finders;
 
 import java.io.IOException;
 

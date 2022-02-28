@@ -1,11 +1,12 @@
 /**
  *
  */
-package org.theseed.meta.jfx;
+package org.theseed.meta.finders;
 
 import java.io.File;
 import java.io.IOException;
 
+import org.theseed.meta.jfx.IModelManager;
 import org.theseed.metabolism.Pathway;
 import org.theseed.utils.ParseFailureException;
 
@@ -34,6 +35,45 @@ public abstract class SubsystemBuilder extends CompoundListAction {
          */
         public File getSubsysDirectory();
 
+    }
+
+    /**
+     * This enum specifies the different types of subsystem builders.
+     */
+    public static enum Type {
+        /** each path goes from the first compound to one of the others */
+        SIMPLE {
+            @Override
+            public SubsystemBuilder create(IParms processor) throws IOException, JsonException, ParseFailureException {
+                return new SimpleSubsystemBuilder(processor);
+            }
+        },
+        /** each path extends from the input path to one of the compounds */
+        PATH {
+            @Override
+            public SubsystemBuilder create(IParms processor) throws IOException, JsonException, ParseFailureException {
+                return new PathSubsystemBuilder(processor);
+            }
+        },
+        /** each path consists solely of a single starting compound */
+        POINT {
+            @Override
+            public SubsystemBuilder create(IParms processor) throws IOException, JsonException, ParseFailureException {
+                return new PointSubsystemBuilder(processor);
+            }
+        };
+
+        /**
+         * @return a subsystem builder of this type
+         *
+         * @param processor		controlling command processor
+         *
+         * @throws IOException
+         * @throws JsonException
+         * @throws ParseFailureException
+         */
+        public abstract SubsystemBuilder create(IParms processor)
+                throws IOException, JsonException, ParseFailureException;
     }
 
     /**

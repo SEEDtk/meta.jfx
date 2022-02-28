@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.meta.jfx;
+package org.theseed.meta.finders;
 
 import java.io.IOException;
 
@@ -24,8 +24,8 @@ public class ExtendPathFinder extends PathFinder {
 
     public ExtendPathFinder(IParms processor) throws ParseFailureException, IOException, JsonException {
         super(processor);
-        Pathway startPath = processor.getStartPathway();
-        if (startPath == null)
+        this.path1 = processor.getStartPathway();
+        if (this.path1 == null)
             throw new ParseFailureException("Path extension request cancelled by user.");
         if (this.getNumLeft() < 1)
             throw new ParseFailureException("At least one metabolite is required to extend a path.");

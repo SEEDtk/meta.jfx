@@ -1,9 +1,11 @@
 /**
  *
  */
-package org.theseed.meta.jfx;
+package org.theseed.meta.finders;
 
 import java.io.IOException;
+
+import org.theseed.meta.jfx.IModelManager;
 import org.theseed.metabolism.Pathway;
 import org.theseed.utils.ParseFailureException;
 
@@ -53,10 +55,17 @@ public abstract class PathFinder extends CompoundListAction {
             }
         },
         /** find the best extension of one of the subsystem paths through the specified metabolites */
-        SUBSYTEM {
+        SUBSYSTEM {
             @Override
             public PathFinder create(IParms processor) throws ParseFailureException, IOException, JsonException {
                 return new SubsystemPathFinder(processor);
+            }
+        },
+        /** perform a normal, straight-line search and then append the starting path */
+        BACKFILL {
+            @Override
+            public PathFinder create(IParms processor) throws ParseFailureException, IOException, JsonException {
+                return new BackfillPathFinder(processor);
             }
         };
 

@@ -20,7 +20,7 @@
       </HBox>
       <Label text="Choose a Compound" GridPane.columnIndex="3" GridPane.rowIndex="2" GridPane.valignment="TOP" />
       <TextField fx:id="txtSearchCompound" prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="2" GridPane.valignment="TOP" />
-      <ListView fx:id="lstCompounds" maxHeight="1.7976931348623157E308" prefHeight="400.0" prefWidth="200.0" GridPane.columnIndex="5" GridPane.rowIndex="2" GridPane.rowSpan="4" />
+      <ListView fx:id="lstCompounds" maxHeight="1.7976931348623157E308" prefHeight="250.0" prefWidth="200.0" GridPane.columnIndex="5" GridPane.rowIndex="2" GridPane.rowSpan="4" />
       <Label text="Flow Modifiers" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.valignment="TOP" />
       <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="3">
          <children>
@@ -90,9 +90,10 @@
             <Button fx:id="btnComputePath" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#computePath" style="-fx-font-weight: bold;" text="COMPUTE PATH" />
          </children>
       </HBox>
-      <VBox prefHeight="60.0" prefWidth="100.0" GridPane.columnIndex="3" GridPane.rowIndex="4">
+      <VBox alignment="TOP_CENTER" prefHeight="60.0" prefWidth="100.0" GridPane.columnIndex="3" GridPane.rowIndex="5">
          <children>
-            <CheckBox fx:id="chkPathSubsys" mnemonicParsing="false" text="Use Saved Path in Subsystem Update" wrapText="true" />
+            <Label text="Subsystem Update Type" />
+            <ChoiceBox fx:id="cmbSubsysUpdateType" prefWidth="150.0" />
          </children>
       </VBox>
       <ListView fx:id="lstSubsystem" maxHeight="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="5" GridPane.rowIndex="8" />
@@ -116,9 +117,9 @@
       <RowConstraints minHeight="10.0" />
       <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" />
       <RowConstraints minHeight="10.0" />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
       <RowConstraints />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="200.0" vgrow="SOMETIMES" />
    </rowConstraints>
 </GridPane>

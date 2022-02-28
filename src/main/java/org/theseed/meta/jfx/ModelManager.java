@@ -23,6 +23,8 @@ import org.theseed.jfx.ResizableController;
 import org.theseed.meta.controllers.CompoundList;
 import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
+import org.theseed.meta.finders.PathFinder;
+import org.theseed.meta.finders.SubsystemBuilder;
 import org.theseed.metabolism.AvoidPathwayFilter;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
@@ -184,9 +186,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private Button btnUpdateSubsystem;
 
-    /** flag indicating how to start new subsystem paths */
+    /** method for subsystem update */
     @FXML
-    private CheckBox chkPathSubsys;
+    private ChoiceBox<SubsystemBuilder.Type> cmbSubsysUpdateType;
 
     /** current subsystem list */
     @FXML
@@ -275,7 +277,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.chkLooped.setDisable(! valid);
         this.btnSelectSubsys.setDisable(! valid);
         this.btnUpdateSubsystem.setDisable(! valid);
-        this.chkPathSubsys.setDisable(! valid);
+        this.cmbSubsysUpdateType.setDisable(! valid);
     }
 
     /**
@@ -599,11 +601,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     protected void updateSubsystem() {
         // Set up the subsystem builder of the appropriate type.
         try {
-            SubsystemBuilder builder;
-            if (this.chkPathSubsys.isSelected())
-                builder = new PathSubsystemBuilder(this);
-            else
-                builder = new SimpleSubsystemBuilder(this);
+            SubsystemBuilder.Type type = this.cmbSubsysUpdateType.getSelectionModel().getSelectedItem();
+            SubsystemBuilder builder = type.create(this);
             boolean ok = builder.updateSubsystem();
             if (ok) {
                 // The subsystem has updated, so we need to reload it.
@@ -627,26 +626,25 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      */
     private boolean loadSubsys(File subDir) throws IOException, ParseFailureException, JsonException {
         File[] pathFiles = subDir.listFiles(PATH_FILE_FILTER);
-        boolean retVal = false;
+        // Set up the path list.
+        var pathList = new ArrayList<Pathway>(pathFiles.length);
         if (pathFiles.length > 0) {
             // Here we have paths to load.
-            var pathList = new ArrayList<Pathway>(pathFiles.length);
             for (File pathFile : pathFiles) {
                 Pathway path = new Pathway(pathFile, this.model);
                 pathList.add(path);
             }
-            // Save the loaded paths.
-            String subsysName = subDir.getName();
-            this.lstSubsystem.getItems().clear();
-            this.lstSubsystem.getItems().addAll(pathList);
-            this.txtMessageBuffer.setText(String.format("%d pathways loaded from subsystem %s.", pathList.size(),
-                    subsysName));
-            // Save the subsystem directory.
-            this.txtSubsysDirectory.setText(subsysName);
-            this.subsysDir = subDir;
-            retVal = true;
         }
-        return retVal;
+        // Save the loaded paths.
+        String subsysName = subDir.getName();
+        this.lstSubsystem.getItems().clear();
+        this.lstSubsystem.getItems().addAll(pathList);
+        this.txtMessageBuffer.setText(String.format("%d pathways loaded from subsystem %s.", pathList.size(),
+                subsysName));
+        // Save the subsystem directory.
+        this.txtSubsysDirectory.setText(subsysName);
+        this.subsysDir = subDir;
+        return true;
     }
 
     /**
