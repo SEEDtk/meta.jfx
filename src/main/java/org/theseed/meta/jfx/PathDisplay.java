@@ -23,7 +23,6 @@ import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
 import org.theseed.metabolism.Reaction;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ListView;
@@ -159,11 +158,9 @@ public class PathDisplay extends ResizableController {
 
     /**
      * Save the current pathway to a file.
-     *
-     * @param event		triggering event
      */
     @FXML
-    protected void savePathFile(ActionEvent event) {
+    protected void savePathFile() {
         FileChooser chooser = new FileChooser();
         chooser.getExtensionFilters().addAll(ModelManager.PATH_FILES, ModelManager.ALL_FILES);
         chooser.setTitle("Save Current Path");
@@ -183,6 +180,35 @@ public class PathDisplay extends ResizableController {
                     done = true;
                 }
             } catch (IOException e) {
+                BaseController.messageBox(AlertType.ERROR, "Error Saving Pathway", e.toString());
+            }
+        }
+    }
+
+    /**
+     * Save the current pathway to an Excel spreadsheet.
+     */
+    @FXML
+    protected void savePathExcel() {
+        FileChooser chooser = new FileChooser();
+        chooser.getExtensionFilters().addAll(ModelManager.EXCEL_FILES, ModelManager.ALL_FILES);
+        chooser.setTitle("Save Path to Excel");
+        chooser.setInitialDirectory(this.modelDir);
+        // Loop until we save or the user cancels out.
+        boolean done = false;
+        while (! done) {
+            try {
+                File saveFile = chooser.showSaveDialog(this.getStage());
+                if (saveFile == null) {
+                    // Here the user cancelled out.
+                    done = true;
+                } else {
+                    this.path.saveToExcel(saveFile, model);
+                    BaseController.messageBox(AlertType.INFORMATION, "Save Path to Excel",
+                            "Pathway saved to " + saveFile.toString() + ".");
+                    done = true;
+                }
+            } catch (Exception e) {
                 BaseController.messageBox(AlertType.ERROR, "Error Saving Pathway", e.toString());
             }
         }

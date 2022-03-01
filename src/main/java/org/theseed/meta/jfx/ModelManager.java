@@ -91,6 +91,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     /** extension filter for flow files */
     public static final FileChooser.ExtensionFilter FLOW_FILES =
             new FileChooser.ExtensionFilter("Flow Command Files", "*.flow");
+    public static final FileChooser.ExtensionFilter EXCEL_FILES =
+            new FileChooser.ExtensionFilter("Excel Spreadsheet", "*.xlsx");
     /** extension filter for all files */
     public static final FileChooser.ExtensionFilter ALL_FILES =
             new FileChooser.ExtensionFilter("All Files", "*.*");

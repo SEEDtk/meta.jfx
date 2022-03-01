@@ -17,6 +17,7 @@
       <HBox prefHeight="100.0" prefWidth="200.0" spacing="10.0">
          <children>
             <Button mnemonicParsing="false" onAction="#savePathFile" prefWidth="100.0" text="Save Path" />
+            <Button mnemonicParsing="false" onAction="#savePathExcel" prefWidth="100.0" text="Export to Excel" />
          </children>
       </HBox>
       <SplitPane dividerPositions="0.65" prefHeight="160.0" prefWidth="200.0" GridPane.rowIndex="1">
