@@ -25,10 +25,8 @@ import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.meta.finders.PathFinder;
 import org.theseed.meta.finders.SubsystemBuilder;
-import org.theseed.metabolism.AvoidPathwayFilter;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
-import org.theseed.metabolism.PathwayFilter;
 import org.theseed.metabolism.mods.ModifierList;
 import org.theseed.utils.ParseFailureException;
 
@@ -74,8 +72,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     private File subsysDir;
     /** current loaded path */
     private Pathway savedPath;
-    /** array of path filters */
-    private PathwayFilter[] filters;
     /** visible list of compounds for the current model */
     private ObservableList<MetaCompound> availableCompounds;
     /** map of compound IDs to compound descriptors */
@@ -86,8 +82,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     protected CompoundList searchListController;
     /** controller for path list */
     protected CompoundList pathListController;
-    /** controller for avoid list */
-    protected CompoundList avoidListController;
     /** extension filter for flow files */
     public static final FileChooser.ExtensionFilter FLOW_FILES =
             new FileChooser.ExtensionFilter("Flow Command Files", "*.flow");
@@ -124,10 +118,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private ListView<MetaCompound> lstPath;
 
-    /** avoid list control */
-    @FXML
-    private ListView<MetaCompound> lstAvoid;
-
     /** select box for type of path */
     @FXML
     private ChoiceBox<PathFinder.Type> cmbPathStyle;
@@ -135,10 +125,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     /** clear-path button */
     @FXML
     private Button btnClearPath;
-
-    /** clear-avoid button */
-    @FXML
-    private Button btnClearAvoid;
 
     /** show-commons button */
     @FXML
@@ -243,8 +229,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             newDir = new File(System.getProperty("user.dir"));
         // Set up a change listener on the text field.
         this.txtSearchCompound.textProperty().addListener(this.new SearchListener());
-        // Create controllers for the three compound lists.
-        this.avoidListController = new CompoundList.Droppable(this.lstAvoid, this);
+        // Create controllers for the compound lists.
         this.pathListController = new CompoundList.Droppable(this.lstPath, this);
         this.searchListController = new CompoundList.Normal(this.lstCompounds, this);
         // Set up the path styles.
@@ -286,8 +271,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.txtSearchCompound.setDisable(! valid);
         this.lstPath.setDisable(! valid);
         this.btnClearPath.setDisable(! valid);
-        this.lstAvoid.setDisable(! valid);
-        this.btnClearAvoid.setDisable(! valid);
         this.btnShowCommons.setDisable(! valid);
         this.btnSelectFlow.setDisable(! valid);
         this.btnFlowRefresh.setDisable(true);
@@ -327,7 +310,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 this.txtSearchCompound.setText("");
                 this.filterList("");
                 this.clearCurrentPath();
-                this.clearCurrentAvoid();
                 this.cmbPathStyle.getSelectionModel().clearAndSelect(0);
                 this.txtFlowFile.setText("");
                 this.txtSubsysDirectory.setText("");
@@ -391,27 +373,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     }
 
     /**
-     * Erase the avoid list.
-     *
-     * @param event		event that triggered this action
-     */
-    @FXML
-    protected void clearAvoid(ActionEvent event) {
-        this.clearCurrentAvoid();
-    }
-
-    /**
      * Erase the path currently being constructed.
      */
     private void clearCurrentPath() {
         this.lstPath.getItems().clear();
-    }
-
-    /**
-     * Erase the current avoid list.
-     */
-    private void clearCurrentAvoid() {
-        this.lstAvoid.getItems().clear();
     }
 
     @FXML
@@ -513,12 +478,11 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      */
     private void loadFlowFile(File userFlowFile) throws IOException {
         this.flowModifier = new ModifierList(userFlowFile);
+        ModifierList flowMods = this.flowModifier;
         // Reset the model and apply the new modifier list.
-        this.model.resetFlow();
-        int modCount = this.flowModifier.apply(this.model);
+        flowMods.apply(this.model);
         this.model.buildReactionNetwork();
-        this.showStatus(String.format("%d reactions modified by flow modifiers.",
-                modCount, this.flowModifier.size()));
+        this.showStatus(String.format("%d flow modifiers applied to model.", flowMods.size()));
         this.txtFlowFile.setText(userFlowFile.getName());
         this.flowFile = userFlowFile;
         this.btnFlowRefresh.setDisable(false);
@@ -533,8 +497,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     protected void computePath() {
         try {
-            // Create the avoid filters.
-            this.setupFilters();
             // Create the path finder.
             PathFinder finder = this.cmbPathStyle.getSelectionModel().getSelectedItem().create(this);
             // Get the path.
@@ -547,19 +509,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             }
         } catch (Exception e) {
             BaseController.messageBox(AlertType.ERROR, "Error Computing Path", e.toString());
-        }
-    }
-
-    /**
-     * Process the avoid list to set up the filters for an operation.
-     */
-    private void setupFilters() {
-        var avoidItems = this.lstAvoid.getItems();
-        if (avoidItems.size() == 0)
-            this.filters = new PathwayFilter[0];
-        else {
-            String[] avoids = this.lstAvoid.getItems().stream().map(x -> x.getId()).toArray(String[]::new);
-            this.filters = new PathwayFilter[] { new AvoidPathwayFilter(avoids) };
         }
     }
 
@@ -631,8 +580,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     protected void updateSubsystem() {
         // Set up the subsystem builder of the appropriate type.
         try {
-            // Create the avoid filters.
-            this.setupFilters();
             // Run the appropriate subsystem builder.
             SubsystemBuilder.Type type = this.cmbSubsysUpdateType.getSelectionModel().getSelectedItem();
             SubsystemBuilder builder = type.create(this);
@@ -770,11 +717,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @Override
     public List<MetaCompound> getCompounds() {
         return this.lstPath.getItems();
-    }
-
-    @Override
-    public PathwayFilter[] getFilters() {
-        return this.filters;
     }
 
     @Override

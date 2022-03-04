@@ -30,7 +30,7 @@ public class NormalPathFinder extends PathFinder {
         String start = this.nextCompound();
         String end = this.nextCompound();
         this.showStatus("Computing pathway from " + start + " to " + end + ".");
-        Pathway path1 = this.getModel().getPathway(start, end, this.getFilters());
+        Pathway path1 = this.getModel().getPathway(start, end);
         // Finish the path through the rest of the compounds.
         Pathway retVal = this.finishPath(path1);
         return retVal;

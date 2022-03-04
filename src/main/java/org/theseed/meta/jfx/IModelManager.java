@@ -9,7 +9,6 @@ import java.util.List;
 import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
-import org.theseed.metabolism.PathwayFilter;
 
 /**
  * This interface defines the common parameters action classes need from the
@@ -24,11 +23,6 @@ public interface IModelManager {
      * @return the list of compounds to process, in order
      */
     public List<MetaCompound> getCompounds();
-
-    /**
-     * @return the array of pathway filters
-     */
-    public PathwayFilter[] getFilters();
 
     /**
      * @return the underlying metabolic model

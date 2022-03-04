@@ -115,12 +115,12 @@ public abstract class PathFinder extends CompoundListAction {
         while (path != null && this.hasNextCompound()) {
             String next = nextCompound();
             this.showStatus("Extending pathway to " + next + ".");
-            retVal = getModel().extendPathway(retVal, next, this.getFilters());
+            retVal = getModel().extendPathway(retVal, next);
         }
         // Check for a looped path.
         if (retVal != null && this.wantLoop) {
             this.showStatus("Looping pathway back to " + retVal.getInput() + ".");
-            retVal = getModel().loopPathway(retVal, this.getFilters());
+            retVal = getModel().loopPathway(retVal);
         }
         return retVal;
     }

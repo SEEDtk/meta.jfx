@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.meta.jfx.IModelManager;
 import org.theseed.metabolism.MetaModel;
-import org.theseed.metabolism.PathwayFilter;
 
 /**
  * This is the base class for actions that operate on the main list of compounds.  It is
@@ -27,8 +26,6 @@ public class CompoundListAction {
     protected static Logger log = LoggerFactory.getLogger(PathFinder.class);
     /** underlying model */
     private MetaModel model;
-    /** pathway filters */
-    private PathwayFilter[] filters;
     /** list of compounds to process */
     private Iterator<MetaCompound> compoundIter;
     /** number of compounds to process */
@@ -46,7 +43,6 @@ public class CompoundListAction {
         this.model = processor.getModel();
         this.compoundIter = processor.getCompounds().iterator();
         this.compoundCount = processor.getCompounds().size();
-        this.filters = processor.getFilters();
     }
 
     /**
@@ -76,13 +72,6 @@ public class CompoundListAction {
      */
     protected MetaModel getModel() {
         return model;
-    }
-
-    /**
-     * @return the pathway search filters
-     */
-    protected PathwayFilter[] getFilters() {
-        return this.filters;
     }
 
     /**

@@ -32,7 +32,7 @@ public class SimpleSubsystemBuilder extends SubsystemBuilder {
 
     @Override
     protected Pathway getPath(String target) {
-        return this.getModel().getPathway(start, target, this.getFilters());
+        return this.getModel().getPathway(start, target);
     }
 
 }

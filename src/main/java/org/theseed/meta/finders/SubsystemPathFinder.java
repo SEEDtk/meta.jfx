@@ -45,7 +45,7 @@ public class SubsystemPathFinder extends PathFinder {
         // Get the first compound.
         String goal = this.nextCompound();
         // Build the starting path.
-        Pathway path1 = this.getModel().findPathway(this.subsysPaths, goal, this.getFilters());
+        Pathway path1 = this.getModel().findPathway(this.subsysPaths, goal);
         // Extend it through whatever metabolites are left.
         Pathway retVal = this.finishPath(path1);
         return retVal;
