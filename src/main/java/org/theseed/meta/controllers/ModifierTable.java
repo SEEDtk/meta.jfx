@@ -58,8 +58,8 @@ public class ModifierTable {
         this.commandColumn.setPrefWidth(100);
         this.commandColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getCommand()));
         this.parmColumn = new TableColumn<Modifier, String>("parms");
-        this.commandColumn.setPrefWidth(300);
-        this.commandColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getParms()));
+        this.parmColumn.setPrefWidth(300);
+        this.parmColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getParms()));
         // Add the columns to the table.
         this.table.getColumns().add(this.activeColumn);
         this.table.getColumns().add(this.commandColumn);

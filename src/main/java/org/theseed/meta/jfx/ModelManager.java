@@ -23,10 +23,12 @@ import org.theseed.jfx.ResizableController;
 import org.theseed.meta.controllers.CompoundList;
 import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
+import org.theseed.meta.controllers.ModifierTable;
 import org.theseed.meta.finders.PathFinder;
 import org.theseed.meta.finders.SubsystemBuilder;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
+import org.theseed.metabolism.mods.Modifier;
 import org.theseed.metabolism.mods.ModifierList;
 import org.theseed.utils.ParseFailureException;
 
@@ -40,6 +42,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TableView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -76,10 +79,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     private ObservableList<MetaCompound> availableCompounds;
     /** map of compound IDs to compound descriptors */
     private Map<String, MetaCompound> metaCompoundMap;
-    /** current flow modifier */
-    private ModifierList flowModifier;
     /** controller for compound search list */
     protected CompoundList searchListController;
+    /** controller for modifier list */
+    protected ModifierTable flowModifier;
     /** controller for path list */
     protected CompoundList pathListController;
     /** extension filter for flow files */
@@ -186,6 +189,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private Button btnLoadOutputs;
 
+    /** flow modifier table */
+    @FXML
+    private TableView<Modifier> tblFlowMods;
+
     /**
      * This listener updates the compound list based on the content of the text property in the
      * search box.
@@ -232,6 +239,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         // Create controllers for the compound lists.
         this.pathListController = new CompoundList.Droppable(this.lstPath, this);
         this.searchListController = new CompoundList.Normal(this.lstCompounds, this);
+        // Create a controller for the flow modifier table.
+        this.flowModifier = new ModifierTable(this.tblFlowMods);
         // Set up the path styles.
         this.cmbPathStyle.getItems().addAll(PathFinder.Type.values());
         // Set up the subsystem methods.
@@ -477,12 +486,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      * @throws IOException
      */
     private void loadFlowFile(File userFlowFile) throws IOException {
-        this.flowModifier = new ModifierList(userFlowFile);
-        ModifierList flowMods = this.flowModifier;
+        // Load the flow modifiers into the display table.
+        ModifierList flowMods = new ModifierList(userFlowFile);
+        this.flowModifier.store(flowMods);
         // Reset the model and apply the new modifier list.
-        flowMods.apply(this.model);
-        this.model.buildReactionNetwork();
-        this.showStatus(String.format("%d flow modifiers applied to model.", flowMods.size()));
         this.txtFlowFile.setText(userFlowFile.getName());
         this.flowFile = userFlowFile;
         this.btnFlowRefresh.setDisable(false);
@@ -497,6 +504,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     protected void computePath() {
         try {
+            // Apply the flow modifiers.
+            this.applyFlow();
             // Create the path finder.
             PathFinder finder = this.cmbPathStyle.getSelectionModel().getSelectedItem().create(this);
             // Get the path.
@@ -510,6 +519,15 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         } catch (Exception e) {
             BaseController.messageBox(AlertType.ERROR, "Error Computing Path", e.toString());
         }
+    }
+
+    /**
+     * Apply the current flow modifiers to the model.
+     */
+    private void applyFlow() {
+        this.showStatus("Applying flow modifiers.");
+        ModifierList flowMods = this.flowModifier.getModifiers();
+        flowMods.apply(this.model);
     }
 
     /**
@@ -578,6 +596,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      */
     @FXML
     protected void updateSubsystem() {
+        // Apply the current flow modifiers to the model.
+        this.applyFlow();
         // Set up the subsystem builder of the appropriate type.
         try {
             // Run the appropriate subsystem builder.
