@@ -489,6 +489,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         try {
             ModifierList modList = this.flowModifier.getModifiers();
             modList.save(this.flowFile);
+            this.showMessage("Flow modifiers saved to " + this.flowFile.getAbsolutePath() + ".");
         } catch (IOException e) {
             BaseController.messageBox(AlertType.ERROR, "Error Reloading Flow Modifications", e.toString());
         }
