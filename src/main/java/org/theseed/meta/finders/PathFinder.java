@@ -112,7 +112,7 @@ public abstract class PathFinder extends CompoundListAction {
         // Save the current path.
         Pathway retVal = path;
         // Loop through the rest of the metabolites.
-        while (path != null && this.hasNextCompound()) {
+        while (retVal != null && this.hasNextCompound()) {
             String next = nextCompound();
             this.showStatus("Extending pathway to " + next + ".");
             retVal = getModel().extendPathway(retVal, next);

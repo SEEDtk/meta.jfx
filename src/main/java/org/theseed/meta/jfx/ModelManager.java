@@ -24,11 +24,11 @@ import org.theseed.meta.controllers.CompoundList;
 import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.meta.controllers.ModifierTable;
+import org.theseed.meta.controllers.ObservableModifier;
 import org.theseed.meta.finders.PathFinder;
 import org.theseed.meta.finders.SubsystemBuilder;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
-import org.theseed.metabolism.mods.Modifier;
 import org.theseed.metabolism.mods.ModifierList;
 import org.theseed.utils.ParseFailureException;
 
@@ -159,7 +159,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     /** refresh-flow-file button */
     @FXML
-    private Button btnFlowRefresh;
+    private Button btnFlowSave;
 
     /** want-loop checkbox */
     @FXML
@@ -191,7 +191,15 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     /** flow modifier table */
     @FXML
-    private TableView<Modifier> tblFlowMods;
+    private TableView<ObservableModifier> tblFlowMods;
+
+    /** flow modifier command selector */
+    @FXML
+    private ChoiceBox<ModifierList.Command> cmbCommand;
+
+    /** add-modifier button */
+    @FXML
+    private Button btnNewMod;
 
     /**
      * This listener updates the compound list based on the content of the text property in the
@@ -246,29 +254,34 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         // Set up the subsystem methods.
         this.cmbSubsysUpdateType.getItems().addAll(SubsystemBuilder.Type.values());
         this.cmbSubsysUpdateType.getSelectionModel().clearAndSelect(0);
+        // Set up the flow commands.
+        this.cmbCommand.getItems().addAll(ModifierList.Command.values());
+        this.cmbCommand.getSelectionModel().clearAndSelect(0);
         // Try to load the model.
         boolean ok = false;
         try {
+            String flowName = "";
             ok = this.setupModel(newDir);
             // Save the directory if it's valid.
             if (ok) {
                 this.modelDir = newDir;
                 // Check for a default flow.
-                String flowName = this.getPref(newDir.getAbsolutePath() + ".flow", "");
-                if (! flowName.isEmpty()) {
-                    // Here we have a default flow.  Make sure it is still valid.
-                    File flowFile = new File(flowName);
-                    if (flowFile.exists()) {
-                        // It's valid, so we load it.
-                        this.loadFlowFile(flowFile);
-                    }
+                flowName = this.getPref(newDir.getAbsolutePath() + ".flow", "");
+            }
+            // Toggle the buttons according to whether we have a valid directory.
+            this.setState(ok);
+            // Load the flow.  This must happen AFTER the state is set.
+            if (! flowName.isEmpty()) {
+                // Here we have a default flow.  Make sure it is still valid.
+                File flowFile = new File(flowName);
+                if (flowFile.exists()) {
+                    // It's valid, so we load it.
+                    this.loadFlowFile(flowFile);
                 }
             }
         } catch (IOException e) {
             // An I/O error here just means a bad directory.  We ignore it.
         }
-        // Toggle the buttons according to whether we have a valid directory.
-        this.setState(ok);
     }
 
     /**
@@ -282,7 +295,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.btnClearPath.setDisable(! valid);
         this.btnShowCommons.setDisable(! valid);
         this.btnSelectFlow.setDisable(! valid);
-        this.btnFlowRefresh.setDisable(true);
+        this.btnFlowSave.setDisable(true);
+        this.btnNewMod.setDisable(true);
         this.cmbPathStyle.setDisable(! valid);
         this.btnShowPath.setDisable(! valid);
         this.btnSelectPath.setDisable(! valid);
@@ -321,6 +335,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 this.clearCurrentPath();
                 this.cmbPathStyle.getSelectionModel().clearAndSelect(0);
                 this.txtFlowFile.setText("");
+                this.tblFlowMods.getItems().clear();
                 this.txtSubsysDirectory.setText("");
                 this.txtPathFile.setText("");
                 this.savedPath = null;
@@ -467,12 +482,13 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     }
 
     /**
-     * Refresh the flow-modification file from disk.  Presumably, the user has just updated it.
+     * Update the flow-modification file on disk.  Presumably, the user has just edited the flow table.
      */
     @FXML
-    protected void refreshFlowFile() {
+    protected void saveFlowFile() {
         try {
-            this.loadFlowFile(this.flowFile);
+            ModifierList modList = this.flowModifier.getModifiers();
+            modList.save(this.flowFile);
         } catch (IOException e) {
             BaseController.messageBox(AlertType.ERROR, "Error Reloading Flow Modifications", e.toString());
         }
@@ -492,7 +508,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         // Reset the model and apply the new modifier list.
         this.txtFlowFile.setText(userFlowFile.getName());
         this.flowFile = userFlowFile;
-        this.btnFlowRefresh.setDisable(false);
+        this.btnFlowSave.setDisable(false);
+        this.btnNewMod.setDisable(false);
         // Save the flow file name in our preferences.
         String prefName = this.modelDir.getAbsolutePath() + ".flow";
         this.setPref(prefName, this.flowFile.getAbsolutePath());
@@ -587,6 +604,22 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 }
             }
         }
+    }
+
+    /**
+     * This event adds a new modifier row to the flow-modifier table.
+     */
+    @FXML
+    protected void addModifier() {
+        // Create a new modifier with the currently-selected command.
+        ObservableModifier newMod = new ObservableModifier();
+        newMod.setActive(false);
+        newMod.setCommand(this.cmbCommand.getValue().toString());
+        // Add the modifier at the end of the table.
+        var items = this.tblFlowMods.getItems();
+        items.add(newMod);
+        this.tblFlowMods.getSelectionModel().clearAndSelect(items.size() - 1);
+        this.tblFlowMods.scrollTo(newMod);
     }
 
     /**

@@ -30,7 +30,7 @@
                   <Button fx:id="btnSelectFlow" mnemonicParsing="false" onAction="#selectFlowFile" text="..." />
                </children>
             </HBox>
-            <Button fx:id="btnFlowRefresh" mnemonicParsing="false" onAction="#refreshFlowFile" prefWidth="150.0" text="Refresh File" />
+            <Button fx:id="btnFlowSave" mnemonicParsing="false" onAction="#saveFlowFile" prefWidth="150.0" text="Save Flow File" />
          </children>
       </VBox>
       <VBox prefWidth="100.0" spacing="5.0" GridPane.columnIndex="4" GridPane.rowIndex="3" GridPane.rowSpan="3">
@@ -55,6 +55,14 @@
          <opaqueInsets>
             <Insets />
          </opaqueInsets>
+         <children>
+            <HBox prefHeight="100.0" prefWidth="200.0" spacing="5.0">
+               <children>
+                  <ChoiceBox fx:id="cmbCommand" prefWidth="100.0" />
+                  <Button fx:id="btnNewMod" mnemonicParsing="false" onAction="#addModifier" text="Add Modifier" />
+               </children>
+            </HBox>
+         </children>
       </HBox>
       <ListView fx:id="lstPath" prefHeight="400.0" prefWidth="300.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="8" />
       <Label text="Saved Path File" GridPane.columnIndex="1" GridPane.rowIndex="4" GridPane.valignment="TOP" />
