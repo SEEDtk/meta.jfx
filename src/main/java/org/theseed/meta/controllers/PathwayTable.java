@@ -3,9 +3,7 @@
  */
 package org.theseed.meta.controllers;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.metabolism.MetaModel;
@@ -16,7 +14,6 @@ import org.theseed.metabolism.Reaction;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
-import javafx.scene.Node;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -144,43 +141,37 @@ public class PathwayTable {
             else {
                 Pathway.Element element = this.getTableRow().getItem();
                 // Compute the formula.
-                String formula = element.getReaction().getFormula(element.isReversed());
+                List<String> formulaParts = element.getReaction().getParsedFormula(element.isReversed());
                 // This will be the graphic we display.
-                Node flow;
+                TextFlow flow = new TextFlow();
+                // Get the input and output elements.  These are bolded.
+                Element prev = PathwayTable.this.path.getPrevious(element);
+                String input_id = (prev == null ? PathwayTable.this.path.getInput() : prev.getOutput());
                 String output_id = element.getOutput();
-                if (output_id == null) {
-                    // If there is no target output, we just emit the formula string.
-                    flow = new Text(formula);
-                } else {
-                    // Here we must bold the output metabolite.
-                    Pattern search = Pattern.compile("\\b" + output_id + "\\b");
-                    Matcher m = search.matcher(formula);
-                    if (! m.find())
-                        flow = new Text(formula);
+                // Build the text flow from the parts of the formula.
+                final int nParts = formulaParts.size();
+                for (int i = 0; i < nParts; i += 2) {
+                    // The connector is simply text.
+                    flow.getChildren().add(new Text(formulaParts.get(i)));
+                    int i1 = i + 1;
+                    // Some formulae have nothing on the right of the connector.  For these we use an X.
+                    if (i1 >= nParts)
+                        flow.getChildren().add(new Text("X"));
                     else {
-                        // Insure we've found the last version of it.
-                        int start = m.start();
-                        int end = m.end();
-                        while (m.find()) {
-                            start = m.start();
-                            end = m.end();
+                        String compound = formulaParts.get(i1);
+                        Text compoundText = new Text(compound);
+                        // If this is a special compound, bold it.
+                        if (compound.equals(input_id) || compound.equals(output_id)) {
+                            Font myFont = compoundText.getFont();
+                            compoundText.setFont(Font.font(myFont.getName(),  FontWeight.BOLD, myFont.getSize()));
+                            compoundText.setUnderline(true);
                         }
-                        // BOLD all the text for the output name.  This is very complicated.
-                        TextFlow myFlow = new TextFlow();
-                        if (start > 0)
-                            myFlow.getChildren().add(new Text(formula.substring(0, start)));
-                        Text bolded = new Text(formula.substring(start, end));
-                        Font myFont = bolded.getFont();
-                        bolded.setFont(Font.font(myFont.getName(),  FontWeight.BOLD, myFont.getSize()));
-                        bolded.setUnderline(true);
-                        myFlow.getChildren().add(bolded);
-                        if (end < formula.length())
-                            myFlow.getChildren().add(new Text(formula.substring(end)));
-                        // Install a tooltip for the bolded text that gives the compound's full name.
-                        String outputName = PathwayTable.this.model.getCompoundName(output_id);
+                        // Install a tooltip for the text that gives the compound's full name.
+                        String outputName = PathwayTable.this.model.getCompoundName(compound);
                         Tooltip nameTip = new Tooltip(outputName);
-                        Tooltip.install(bolded, nameTip);
-                        flow = myFlow;
+                        Tooltip.install(compoundText, nameTip);
+                        // Add the compound to the formula.
+                        flow.getChildren().add(compoundText);
                     }
                 }
                 this.setGraphic(flow);

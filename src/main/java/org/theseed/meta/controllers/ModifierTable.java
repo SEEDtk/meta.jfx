@@ -90,6 +90,7 @@ public class ModifierTable {
         this.parmColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         this.parmColumn.setCellValueFactory(new PropertyValueFactory<ObservableModifier, String>("parms"));
         this.parmColumn.setEditable(true);
+        this.parmColumn.setOnEditCommit((e) -> e.getRowValue().setParms(e.getNewValue()));
         // Add the columns to the table.
         this.table.getColumns().add(this.activeColumn);
         this.table.getColumns().add(this.commandColumn);

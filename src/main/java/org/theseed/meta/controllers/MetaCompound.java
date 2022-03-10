@@ -81,11 +81,8 @@ public class MetaCompound implements Comparable<MetaCompound> {
 
     @Override
     public int compareTo(MetaCompound o) {
-        // We order by name and then ID.
-        int retVal = this.name.compareTo(o.name);
-        if (retVal == 0)
-            retVal = this.id.compareTo(o.id);
-        return retVal;
+        // We order by ID.
+        return this.id.compareTo(o.id);
     }
 
     /**

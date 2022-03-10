@@ -344,9 +344,9 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 this.txtFlowFile.setText("");
                 this.lstSubsystem.getItems().clear();
                 // Denote we have successfully loaded a model.
-                String message = String.format("%d reactions and %d compounds loaded from model for %s.",
+                String message = String.format("%d reactions and %d compounds loaded from  %s.",
                         this.model.getReactionCount(), this.model.getMetaboliteCount(),
-                        this.model.getBaseGenome().toString());
+                        this.model.toString());
                 showStatus(message);
                 this.txtModelDirectory.setText(newDir.getName());
                 retVal = true;
@@ -374,14 +374,12 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      * Initialize the compound list using the current model.
      */
     private void setupCompounds() {
-        var compoundMap = this.model.getCompoundMap();
         // Clear our version of the map.
         this.metaCompoundMap.clear();
         // Loop through the names, building compounds to add to the main list.
-        for (Map.Entry<String, Set<String>> compoundEntry : compoundMap.entrySet()) {
-            // Note that the key is the name and the value is a set of IDs.
-            String name = compoundEntry.getKey();
-            compoundEntry.getValue().stream().forEach(x -> this.metaCompoundMap.put(x, new MetaCompound(x, name)));
+        for (String compound : model.getMetaboliteMap().keySet()) {
+            String name = model.getCompoundName(compound);
+            this.metaCompoundMap.put(compound, new MetaCompound(compound, name));
         }
         log.info("{} compounds loaded from model {}.", this.metaCompoundMap.size(), this.model);
     }
@@ -546,6 +544,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.showStatus("Applying flow modifiers.");
         ModifierList flowMods = this.flowModifier.getModifiers();
         flowMods.apply(this.model);
+        this.model.buildReactionNetwork();
     }
 
     /**
