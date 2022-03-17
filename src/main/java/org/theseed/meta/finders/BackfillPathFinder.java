@@ -6,7 +6,6 @@ package org.theseed.meta.finders;
 import java.io.IOException;
 
 import org.theseed.metabolism.Pathway;
-import org.theseed.metabolism.Reaction;
 import org.theseed.utils.ParseFailureException;
 
 import com.github.cliftonlabs.json_simple.JsonException;
@@ -47,10 +46,7 @@ public class BackfillPathFinder extends PathFinder {
             this.showStatus("Extending computed pathway to " + path2.toString() + ".");
             retVal = this.getModel().extendPathway(retVal, path2.getInput());
             // Now append the starting path to the path being constructed.
-            for (Pathway.Element element : this.path2) {
-                Reaction react = element.getReaction();
-                retVal.add(react, react.getStoich(element.getOutput()));
-            }
+            retVal.append(path2);
         }
         return retVal;
     }

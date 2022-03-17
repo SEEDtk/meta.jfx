@@ -8,6 +8,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 
@@ -221,12 +223,12 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     @Override
     public String getIconName() {
-        return "multi-gear-16.png";
+        return "BioMace-16.png";
     }
 
     @Override
     public String getWindowTitle() {
-        return "Metabolic Model Managger";
+        return "BioMacE Metabolic Model Managger";
     }
 
     /**
@@ -347,7 +349,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 String message = String.format("%d reactions and %d compounds loaded from  %s.",
                         this.model.getReactionCount(), this.model.getMetaboliteCount(),
                         this.model.toString());
-                showStatus(message);
+                this.showMessage(message);
                 this.txtModelDirectory.setText(newDir.getName());
                 retVal = true;
             }
@@ -403,13 +405,15 @@ public class ModelManager extends ResizableController implements ICompoundFinder
 
     @FXML
     protected void showCommonCompounds() {
+        // Insure the common compounds from the flow model are active.
+        this.applyFlow();
         // Fill the compound list with the common compounds.
         var commons = this.model.getCommons();
         this.availableCompounds.clear();
         Set<MetaCompound> compounds = commons.stream().map(x -> this.getCompound(x)).filter(x -> x != null)
                 .collect(Collectors.toCollection(TreeSet<MetaCompound>::new));
         this.availableCompounds.addAll(compounds);
-        this.showStatus(String.format("%d common compounds in this model.", compounds.size()));
+        this.showMessage(String.format("%d common compounds in this model.", compounds.size()));
     }
 
     /**
@@ -529,7 +533,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
             if (path == null)
                 BaseController.messageBox(AlertType.WARNING, "Error Computing Path", "Could not find the desired pathway.");
             else {
-                this.showStatus(String.format("%d reactions found in pathway.", path.size()));
+                this.showMessage(String.format("%d reactions found in pathway.", path.size()));
                 this.displayPath(path);
             }
         } catch (Exception e) {
@@ -541,7 +545,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      * Apply the current flow modifiers to the model.
      */
     private void applyFlow() {
-        this.showStatus("Applying flow modifiers.");
+        this.showMessage("Applying flow modifiers.");
         ModifierList flowMods = this.flowModifier.getModifiers();
         flowMods.apply(this.model);
         this.model.buildReactionNetwork();
@@ -623,6 +627,25 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     }
 
     /**
+     * This event processes a click on the subsystem path list.  If it is a double-click, we
+     * will display the subsystem path.
+     *
+     * @param event		mouse click event descriptor
+     */
+    @FXML
+    protected void showSubsysPath(MouseEvent event) {
+        if (event.getClickCount() >= 2) {
+            // Here we have a double-click.  Get the selected path.
+            Pathway path = this.lstSubsystem.getSelectionModel().getSelectedItem();
+            if (path != null) try {
+                this.displayPath(path);
+            } catch (IOException e) {
+                BaseController.messageBox(AlertType.ERROR, "Error Loading Path", e.toString());
+            }
+        }
+    }
+
+    /**
      * This method updates the current subsystem. If no subsystem directory is specified, the
      * user will will be asked to specify one.  In a subsystem update, we create a path for
      * each compound in the main pathway list, and store it in the subsystem directory.
@@ -692,6 +715,8 @@ public class ModelManager extends ResizableController implements ICompoundFinder
                 Pathway path = new Pathway(pathFile, this.model);
                 pathList.add(path);
             }
+            // Sort them in order from shortest to longest.
+            Collections.sort(pathList);
         }
         // Save the loaded paths.
         String subsysName = subDir.getName();
@@ -729,19 +754,11 @@ public class ModelManager extends ResizableController implements ICompoundFinder
      * @throws IOException
      */
     private void displayPath(Pathway path) throws IOException {
+        this.applyFlow();
         Stage pathStage = new Stage();
         PathDisplay pathViewer = (PathDisplay) BaseController.loadFXML(App.class, "PathDisplay", pathStage);
         pathViewer.init(path, this);
         pathStage.show();
-    }
-
-    /**
-     * Display a message in the status bar.
-     *
-     * @param message		message to display
-     */
-    private void showStatus(String message) {
-        this.txtMessageBuffer.setText(message);
     }
 
     @Override
@@ -798,7 +815,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @Override
     public void showMessage(String message) {
         this.txtMessageBuffer.setText(message);
-
+        log.info("Status: {}", message);
     }
 
     @Override

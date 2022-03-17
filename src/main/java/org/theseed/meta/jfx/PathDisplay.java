@@ -19,6 +19,7 @@ import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.meta.controllers.PathwayTable;
 import org.theseed.meta.controllers.ReactionTrigger;
 import org.theseed.meta.controllers.ReactionTriggerCell;
+import org.theseed.metabolism.CompoundRating;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
 import org.theseed.metabolism.Reaction;
@@ -134,22 +135,27 @@ public class PathDisplay extends ResizableController {
      * @return a sorted set of the reaction triggers for the pathway
      */
     private Set<ReactionTrigger> getTriggers() {
+        // Compute the weight map.
+        Map<String, CompoundRating> weightMap = CompoundRating.getRatingMap(this.path, this.model);
         // We want the triggers sorted, so we put them in a tree set.
         var retVal = new TreeSet<ReactionTrigger>();
         // Loop through the reactions.
         for (Pathway.Element element : this.path) {
             Reaction reaction = element.getReaction();
+            // Compute the reaction weight.
+            double weight = reaction.getWeight(weightMap, ! element.isReversed());
             // Loop through the feature IDs of the triggers, adding them to the main line.
             reaction.getTriggers().stream().flatMap(x -> model.fidsOf(x).stream())
-                    .forEach(x -> retVal.add(new ReactionTrigger.Main(x, reaction, this.model)));
+                    .forEach(x -> retVal.add(new ReactionTrigger.Main(x, reaction, this.model, weight)));
         }
         // Loop through the branches.
         var branches = this.path.getBranches(model);
         for (Map.Entry<String, Set<Reaction>> branchEntry : branches.entrySet()) {
             String consumed = branchEntry.getKey();
             for (Reaction reaction : branchEntry.getValue()) {
+                double weight = reaction.getWeight(weightMap, reaction.isProduct(consumed));
                 reaction.getTriggers().stream().flatMap(x -> model.fidsOf(x).stream())
-                        .forEach(x -> retVal.add(new ReactionTrigger.Branch(x, reaction, this.model, consumed)));
+                        .forEach(x -> retVal.add(new ReactionTrigger.Branch(x, reaction, this.model, consumed, weight)));
             }
         }
         // Return the accumulated triggers.

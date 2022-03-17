@@ -29,6 +29,8 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
     private Feature feat;
     /** gene name of the feature, for sorting */
     private String sortName;
+    /** weight of this reaction */
+    private double weight;
     /** code for an unnamed trigger (must sort to the end) */
     private static final String NO_NAME = "~peg";
 
@@ -39,19 +41,22 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
      * @param reaction	reaction being triggered
      * @param model		underlying model for the reaction
      */
-    public ReactionTrigger(String fid, Reaction reaction, MetaModel model) {
+    public ReactionTrigger(String fid, Reaction reaction, MetaModel model, double weight) {
         this.reaction = reaction;
         this.feat = model.getBaseGenome().getFeature(fid);
         this.sortName = this.feat.getGeneName();
-        // Sort un-named features to the end.
+        this.weight = weight;
+        // Sort un-named features to the end, all else being equal.
         if (this.sortName.isEmpty())
             this.sortName = NO_NAME;
     }
 
     @Override
     public int compareTo(ReactionTrigger o) {
-        int retVal = this.getTypeIdx() - o.getTypeIdx();
+        // Sort by weight first, with highest winning.
+        int retVal = Double.compare(o.weight, this.weight);
         if (retVal == 0) {
+            // Now sort by visual components.
             retVal = this.getTarget().compareTo(o.getTarget());
             if (retVal == 0) {
                 retVal = this.sortName.compareTo(o.sortName);
@@ -146,8 +151,8 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
         /** icon for a mainline trigger */
         private static Image MAIN_ICON = new Image(App.class.getResourceAsStream("plus-16.png"));
 
-        public Main(String fid, Reaction reaction, MetaModel model) {
-            super(fid, reaction, model);
+        public Main(String fid, Reaction reaction, MetaModel model, double weight) {
+            super(fid, reaction, model, weight);
         }
 
         @Override
@@ -184,9 +189,10 @@ public abstract class ReactionTrigger implements Comparable<ReactionTrigger> {
          * @param reaction	reaction being triggered
          * @param model		underlying model
          * @param compound	BiGG ID of the compound being consumed
+         * @param weight	weight of the reaction
          */
-        public Branch(String fid, Reaction reaction, MetaModel model, String compound) {
-            super(fid, reaction, model);
+        public Branch(String fid, Reaction reaction, MetaModel model, String compound, double weight) {
+            super(fid, reaction, model, weight);
             this.compound = compound;
         }
 

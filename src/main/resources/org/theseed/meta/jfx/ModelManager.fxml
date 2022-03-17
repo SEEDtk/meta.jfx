@@ -90,7 +90,7 @@
             <Button fx:id="btnLoadOutputs" mnemonicParsing="false" onAction="#loadSubsystemOutputs" prefWidth="150.0" text="Load Subsys Outputs" />
          </children>
       </VBox>
-      <HBox alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" prefHeight="30.0" prefWidth="200.0" spacing="10.0" GridPane.columnIndex="5" GridPane.hgrow="ALWAYS">
+      <HBox alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" prefHeight="30.0" prefWidth="200.0" spacing="10.0" GridPane.columnIndex="4" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS">
          <children>
             <CheckBox fx:id="chkLooped" mnemonicParsing="false" text="Looped" />
             <Button fx:id="btnComputePath" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#computePath" style="-fx-font-weight: bold;" text="COMPUTE PATH" />
@@ -102,7 +102,7 @@
             <ChoiceBox fx:id="cmbSubsysUpdateType" prefWidth="150.0" />
          </children>
       </VBox>
-      <ListView fx:id="lstSubsystem" maxHeight="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="5" GridPane.rowIndex="8" />
+      <ListView fx:id="lstSubsystem" maxHeight="1.7976931348623157E308" onMouseClicked="#showSubsysPath" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="5" GridPane.rowIndex="8" />
       <Label text="Current Subsystem Contents" GridPane.columnIndex="5" GridPane.rowIndex="7" />
    </children>
    <padding>
