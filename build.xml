@@ -25,7 +25,7 @@
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/args4j/args4j/2.33/args4j-2.33.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/apache/commons/commons-text/1.8/commons-text-1.8.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar"/>
-            <fileset dir="${dir.workspace}/git/shared.meta/shared.meta/target/classes"/>
+            <fileset dir="${dir.workspace}/git/shared.meta/target/classes"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/commons-io/commons-io/2.8.0/commons-io-2.8.0.jar"/>
             <fileset dir="${dir.workspace}/git/p3api/target/classes"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/apache/httpcomponents/httpclient/4.5.13/httpclient-4.5.13.jar"/>
