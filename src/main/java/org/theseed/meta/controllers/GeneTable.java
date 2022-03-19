@@ -108,10 +108,10 @@ public class GeneTable {
         this.colGenes.setPrefWidth(50);
         this.colGenes.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getProteinSpec()));
         this.colLocations = new TableColumn<ProteinRating, String>("Locations");
-        this.colLocations.setPrefWidth(100);
+        this.colLocations.setPrefWidth(250);
         this.colLocations.setCellValueFactory(this.new ShowLocations());
         this.colFormula = new TableColumn<ProteinRating, String>("Reaction");
-        this.colFormula.setPrefWidth(200);
+        this.colFormula.setPrefWidth(400);
         this.colFormula.setCellFactory(this.new FormulaCellCallback());
         // Add the columns to the table.
         this.tblGenes.getColumns().add(this.colWeights);
