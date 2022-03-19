@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.ResizableController;
 import org.theseed.meta.controllers.CompoundList;
+import org.theseed.meta.controllers.GeneTable;
 import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.meta.controllers.PathwayTable;
@@ -22,6 +23,7 @@ import org.theseed.meta.controllers.ReactionTriggerCell;
 import org.theseed.metabolism.CompoundRating;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
+import org.theseed.metabolism.ProteinRating;
 import org.theseed.metabolism.Reaction;
 
 import javafx.fxml.FXML;
@@ -50,6 +52,8 @@ public class PathDisplay extends ResizableController {
     protected CompoundList inputController;
     /** output compound manager */
     protected CompoundList outputController;
+    /** gene list manager */
+    protected GeneTable geneController;
     /** saved model directory */
     private File modelDir;
 
@@ -70,6 +74,10 @@ public class PathDisplay extends ResizableController {
     /** list control for output compounds */
     @FXML
     private ListView<MetaCompound> lstOutputCompounds;
+
+    /** table control for gene list */
+    @FXML
+    private TableView<ProteinRating> tblGenes;
 
 
     public PathDisplay() {
@@ -110,10 +118,16 @@ public class PathDisplay extends ResizableController {
         // Load the output compounds.
         var outputs = path.getOutputs();
         this.fillCompoundList(this.lstOutputCompounds, outputs, parent);
+        // Get the weight map and the branch list.
+        Map<String, CompoundRating> weightMap = CompoundRating.getRatingMap(this.path, this.model);
+        Map<String, Set<Reaction>> branches = this.path.getBranches(model);
         // Set up the trigger list.
         this.lstTriggers.setCellFactory((x) -> new ReactionTriggerCell());
-        Set<ReactionTrigger> triggers = this.getTriggers();
+        Set<ReactionTrigger> triggers = this.getTriggers(weightMap, branches);
         this.lstTriggers.getItems().addAll(triggers);
+        // Set up the gene table.
+        var ratings = path.getProteinRatings(this.model, weightMap, branches);
+        this.geneController = new GeneTable(this.tblGenes, this.model, ratings);
     }
 
     /**
@@ -132,11 +146,15 @@ public class PathDisplay extends ResizableController {
     }
 
     /**
+     * Compute the reaction triggers.
+     *
+     * @param branches		map of compound IDs to branching reactions
+     * @param weightMap 	map of compound IDs to compound ratings
+     *
      * @return a sorted set of the reaction triggers for the pathway
      */
-    private Set<ReactionTrigger> getTriggers() {
+    private Set<ReactionTrigger> getTriggers(Map<String, CompoundRating> weightMap, Map<String, Set<Reaction>> branches) {
         // Compute the weight map.
-        Map<String, CompoundRating> weightMap = CompoundRating.getRatingMap(this.path, this.model);
         // We want the triggers sorted, so we put them in a tree set.
         var retVal = new TreeSet<ReactionTrigger>();
         // Loop through the reactions.
@@ -149,7 +167,6 @@ public class PathDisplay extends ResizableController {
                     .forEach(x -> retVal.add(new ReactionTrigger.Main(x, reaction, this.model, weight)));
         }
         // Loop through the branches.
-        var branches = this.path.getBranches(model);
         for (Map.Entry<String, Set<Reaction>> branchEntry : branches.entrySet()) {
             String consumed = branchEntry.getKey();
             for (Reaction reaction : branchEntry.getValue()) {

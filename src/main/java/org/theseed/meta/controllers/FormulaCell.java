@@ -125,7 +125,6 @@ public class FormulaCell<T extends IReactionSource> extends TableCell<T, String>
                     Tooltip.install(compoundText, nameTip);
                     compoundText.addEventHandler(MouseEvent.MOUSE_CLICKED,
                             this.new ShowCompoundHandler(compound, react.isProduct(compound) == reversed));
-                    // TODO install click events.  Clicking on an input pops up producers.  Clicking on an output pops up successors.
                     // Add the compound to the formula.
                     flow.getChildren().add(compoundText);
                 }
