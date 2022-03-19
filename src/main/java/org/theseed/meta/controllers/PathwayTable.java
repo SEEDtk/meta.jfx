@@ -3,6 +3,7 @@
  */
 package org.theseed.meta.controllers;
 
+import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,68 +116,16 @@ public class PathwayTable {
     }
 
     /**
-     * This is the cell factory class for formula cells.  Formula cells have the output metabolite boldfaced,
+     * This is the cell factory class for formula cells.  Formula cells have the font variations and tooltips,
      * so they require a custom display.
      */
     public class FormulaCellCallback implements Callback<TableColumn<Pathway.Element, String>, TableCell<Pathway.Element, String>> {
 
         @Override
         public TableCell<Pathway.Element, String> call(TableColumn<Pathway.Element, String> param) {
-            return new FormulaCell();
+            return new FormulaCell<Pathway.Element>(PathwayTable.this.model);
         }
 
-    }
-
-    /**
-     * This object represents a formula cell.  It is responsible for generating and rendering the formula.
-     */
-    public class FormulaCell extends TableCell<Pathway.Element, String> {
-
-        @Override
-        public void updateItem(String form, boolean empty) {
-            super.updateItem(form, empty);
-            this.setText(null);
-            if (empty)
-                this.setGraphic(null);
-            else {
-                Pathway.Element element = this.getTableRow().getItem();
-                // Compute the formula.
-                List<String> formulaParts = element.getReaction().getParsedFormula(element.isReversed());
-                // This will be the graphic we display.
-                TextFlow flow = new TextFlow();
-                // Get the input and output elements.  These are bolded.
-                Element prev = PathwayTable.this.path.getPrevious(element);
-                String input_id = (prev == null ? PathwayTable.this.path.getInput() : prev.getOutput());
-                String output_id = element.getOutput();
-                // Build the text flow from the parts of the formula.
-                final int nParts = formulaParts.size();
-                for (int i = 0; i < nParts; i += 2) {
-                    // The connector is simply text.
-                    flow.getChildren().add(new Text(formulaParts.get(i)));
-                    int i1 = i + 1;
-                    // Some formulae have nothing on the right of the connector.  For these we use an X.
-                    if (i1 >= nParts)
-                        flow.getChildren().add(new Text("X"));
-                    else {
-                        String compound = formulaParts.get(i1);
-                        Text compoundText = new Text(compound);
-                        // If this is a special compound, bold it.
-                        if (compound.equals(input_id) || compound.equals(output_id)) {
-                            Font myFont = compoundText.getFont();
-                            compoundText.setFont(Font.font(myFont.getName(),  FontWeight.BOLD, myFont.getSize()));
-                            compoundText.setUnderline(true);
-                        }
-                        // Install a tooltip for the text that gives the compound's full name.
-                        String outputName = PathwayTable.this.model.getCompoundName(compound);
-                        Tooltip nameTip = new Tooltip(outputName);
-                        Tooltip.install(compoundText, nameTip);
-                        // Add the compound to the formula.
-                        flow.getChildren().add(compoundText);
-                    }
-                }
-                this.setGraphic(flow);
-            }
-        }
     }
 
     /**
@@ -219,5 +168,48 @@ public class PathwayTable {
         this.path.stream().forEach(x -> items.add(x));
     }
 
+    /**
+     * Format the display of a reaction formula.  Some of the compounds may be bolded, and all compounds will
+     * have tooltips to display the name.
+     *
+     * @param model			underlying metabolic model (used to get compound names)
+     * @param react			reaction to display
+     * @param reversed		TRUE if the reaction is reversed
+     * @param special_id	array of special IDs to be boldfaced
+     *
+     * @return a text-flow object for displaying the formula
+     */
+    public static TextFlow showFormula(MetaModel model, Reaction react, boolean reversed, String... special_id) {
+        TextFlow retVal = new TextFlow();
+        // Compute the formula.
+        List<String> formulaParts = react.getParsedFormula(reversed);
+        // Build the text flow from the parts of the formula.
+        final int nParts = formulaParts.size();
+        for (int i = 0; i < nParts; i += 2) {
+            // The connector is simply text.
+            retVal.getChildren().add(new Text(formulaParts.get(i)));
+            int i1 = i + 1;
+            // Some formulae have nothing on the right of the connector.  For these we use an X.
+            if (i1 >= nParts)
+                retVal.getChildren().add(new Text("X"));
+            else {
+                String compound = formulaParts.get(i1);
+                Text compoundText = new Text(compound);
+                // If this is a special compound, bold it.
+                if (Arrays.stream(special_id).anyMatch(x -> compound.equals(x))) {
+                    Font myFont = compoundText.getFont();
+                    compoundText.setFont(Font.font(myFont.getName(),  FontWeight.BOLD, myFont.getSize()));
+                    compoundText.setUnderline(true);
+                }
+                // Install a tooltip for the text that gives the compound's full name.
+                String outputName = model.getCompoundName(compound);
+                Tooltip nameTip = new Tooltip(outputName);
+                Tooltip.install(compoundText, nameTip);
+                // Add the compound to the formula.
+                retVal.getChildren().add(compoundText);
+            }
+        }
+        return retVal;
+    }
 
 }
