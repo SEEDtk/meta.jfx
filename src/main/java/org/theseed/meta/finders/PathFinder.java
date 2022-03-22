@@ -4,11 +4,16 @@
 package org.theseed.meta.finders;
 
 import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.meta.jfx.IModelManager;
 import org.theseed.metabolism.Pathway;
 import org.theseed.utils.ParseFailureException;
 
 import com.github.cliftonlabs.json_simple.JsonException;
+
+import javafx.concurrent.Task;
 
 /**
  * This object manages the search for a metabolic pathway.  It allows customizing the search using
@@ -19,6 +24,9 @@ import com.github.cliftonlabs.json_simple.JsonException;
  */
 public abstract class PathFinder extends CompoundListAction {
 
+    // FIELDS
+    /** logging facility */
+    protected static Logger log = LoggerFactory.getLogger(PathFinder.class);
     /** TRUE if the pathway should be looped */
     private boolean wantLoop;
 
@@ -99,13 +107,16 @@ public abstract class PathFinder extends CompoundListAction {
      */
     public PathFinder(IParms processor) throws ParseFailureException, IOException, JsonException {
         super(processor);
+        processor.getModel().setReporter(processor);
         this.wantLoop = processor.getLoopFlag();
     }
 
     /**
-     * @return the desired path
+     * Find a pathway.  This method may be run in the background.
      *
      * @param iter		iterator through the list of compounds; should be used for all compound retrieval
+     *
+     * @return the desired path, or NULL if none was found
      */
     public abstract Pathway computePath();
 
@@ -129,6 +140,47 @@ public abstract class PathFinder extends CompoundListAction {
             retVal = getModel().loopPathway(retVal);
         }
         return retVal;
+    }
+
+    /**
+     * This object runs the path search in the background.  Note that the status message should not be
+     * overridden after it is done, since it may contain error information.
+     */
+    public class Runner extends Task<Boolean> {
+
+        /** pathway found */
+        private Pathway path;
+
+        @Override
+        protected Boolean call() throws Exception {
+            boolean retVal = false;
+            try {
+                this.path = PathFinder.this.computePath();
+                if (this.path == null) {
+                    PathFinder.this.showStatus("Could not find requested pathway.");
+                    PathFinder.this.showProgress(0.0);
+                } else {
+                    PathFinder.this.showStatus("Pathway contains " + Integer.toString(this.path.size())
+                            + " reactions.");
+                    PathFinder.this.showProgress(1.0);
+                    retVal = true;
+                }
+            } catch (Exception e) {
+                PathFinder.this.showStatus("Error: " + e.toString());
+                this.path = null;
+            }
+            // Denote this task is done.  To avoid a race condition, we save the result immediately.
+            PathFinder.this.showCompleted();
+            return retVal;
+        }
+
+        /**
+         * @return the path found
+         */
+        public Pathway getResult() {
+            return this.path;
+        }
+
     }
 
 }

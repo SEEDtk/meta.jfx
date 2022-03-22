@@ -26,6 +26,7 @@ import org.theseed.meta.controllers.ICompoundFinder;
 import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.meta.controllers.ModifierTable;
 import org.theseed.meta.controllers.ObservableModifier;
+import org.theseed.meta.finders.IEndHandler;
 import org.theseed.meta.finders.PathFinder;
 import org.theseed.meta.finders.SubsystemBuilder;
 import org.theseed.metabolism.MetaModel;
@@ -35,6 +36,7 @@ import org.theseed.utils.ParseFailureException;
 
 import com.github.cliftonlabs.json_simple.JsonException;
 
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -43,6 +45,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -77,6 +80,10 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     private File subsysDir;
     /** current loaded path */
     private Pathway savedPath;
+    /** TRUE if the background task should stop */
+    private boolean stopFlag;
+    /** handler to run when the background task is complete */
+    private IEndHandler endHandler;
     /** visible list of compounds for the current model */
     private ObservableList<MetaCompound> availableCompounds;
     /** map of compound IDs to compound descriptors */
@@ -203,6 +210,14 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     @FXML
     private Button btnNewMod;
 
+    /** progress bar for searches */
+    @FXML
+    private ProgressBar barProgress;
+
+    /** button to abort a background task */
+    @FXML
+    private Button btnAbort;
+
     /**
      * This listener updates the compound list based on the content of the text property in the
      * search box.
@@ -307,6 +322,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.btnUpdateSubsystem.setDisable(true);
         this.cmbSubsysUpdateType.setDisable(! valid);
         this.btnLoadOutputs.setDisable(true);
+        this.btnAbort.setVisible(false);
     }
 
     /**
@@ -523,19 +539,19 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     */
     @FXML
     protected void computePath() {
-        try {
+        if (this.endHandler != null)
+            BaseController.messageBox(AlertType.WARNING, "Background Error", "A background task is already running.");
+        else try {
             // Apply the flow modifiers.
             this.applyFlow();
             // Create the path finder.
             PathFinder finder = this.cmbPathStyle.getSelectionModel().getSelectedItem().create(this);
-            // Get the path.
-            Pathway path = finder.computePath();
-            if (path == null)
-                BaseController.messageBox(AlertType.WARNING, "Error Computing Path", "Could not find the desired pathway.");
-            else {
-                this.showMessage(String.format("%d reactions found in pathway.", path.size()));
-                this.displayPath(path);
-            }
+            // Run in the background to get the path.
+            this.enableButtons(false);
+            this.stopFlag = false;
+            var runner = finder.new Runner();
+            this.endHandler = this.new PathDisplayer(runner);
+            new Thread(runner).start();
         } catch (Exception e) {
             BaseController.messageBox(AlertType.ERROR, "Error Computing Path", e.toString());
         }
@@ -646,6 +662,14 @@ public class ModelManager extends ResizableController implements ICompoundFinder
     }
 
     /**
+     * This event fires when the user wants to abort a background task.
+     */
+    @FXML
+    protected void abortCommand() {
+        this.stopFlag = true;
+    }
+
+    /**
      * This method updates the current subsystem. If no subsystem directory is specified, the
      * user will will be asked to specify one.  In a subsystem update, we create a path for
      * each compound in the main pathway list, and store it in the subsystem directory.
@@ -656,6 +680,7 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.applyFlow();
         // Set up the subsystem builder of the appropriate type.
         try {
+            // TODO set up for background run
             // Run the appropriate subsystem builder.
             SubsystemBuilder.Type type = this.cmbSubsysUpdateType.getSelectionModel().getSelectedItem();
             SubsystemBuilder builder = type.create(this);
@@ -812,7 +837,6 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         return retVal;
     }
 
-    @Override
     public void showMessage(String message) {
         this.txtMessageBuffer.setText(message);
         log.info("Status: {}", message);
@@ -834,4 +858,99 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         return retVal;
     }
 
+    /**
+     * Here we display progress.  We also process the stop-flag.  If the stop-flag is set, the
+     * thread will be terminated by our own special InterruptException.
+     */
+    @Override
+    public void showProgress(double p) {
+        if (this.stopFlag)
+            throw new InterruptException();
+        else {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    barProgress.setProgress(p);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void showStatus(String msg) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                txtMessageBuffer.setText(msg);
+            }
+        });
+    }
+
+    @Override
+    public void showCompleted() {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                if (endHandler != null)
+                    endHandler.handleCompletion();
+                enableButtons(true);
+                endHandler = null;            }
+        });
+
+    }
+
+    /**
+     * Disable the buttons prior to processing a background task.
+     */
+    protected void enableButtons(final boolean state) {
+        btnClearPath.setDisable(! state);
+        btnComputePath.setDisable(! state);
+        btnFlowSave.setDisable(! state);
+        btnLoadOutputs.setDisable(! state);
+        btnNewMod.setDisable(! state);
+        btnSelectFlow.setDisable(! state);
+        btnSelectPath.setDisable(! state);
+        btnSelectSubsys.setDisable(! state);
+        btnShowPath.setDisable(! state);
+        btnUpdateSubsystem.setDisable(! state);
+        chkLooped.setDisable(! state);
+        cmbCommand.setDisable(! state);
+        cmbPathStyle.setDisable(! state);
+        cmbSubsysUpdateType.setDisable(! state);
+        lstCompounds.setDisable(! state);
+        lstPath.setDisable(! state);
+        lstSubsystem.setDisable(! state);
+        btnAbort.setVisible(! state);
+    }
+
+    /**
+     * This is the end-of-task handler for the completion of a path search.  The pathway is
+     * extracted, and if one was found, it is displayed in a window.
+     */
+    private class PathDisplayer implements IEndHandler {
+
+        /** background task being run */
+        private PathFinder.Runner task;
+
+        /**
+         * Construct the handler for the path search.
+         *
+         * @param task		background task performing the search
+         */
+        protected PathDisplayer(PathFinder.Runner task) {
+            this.task = task;
+        }
+
+        @Override
+        public void handleCompletion() {
+            Pathway newPath = this.task.getResult();
+            if (newPath != null)
+                try {
+                    ModelManager.this.displayPath(newPath);
+                } catch (IOException e) {
+                    BaseController.messageBox(AlertType.ERROR, "Error Displaying Path", e.toString());
+                }
+        }
+
+    }
 }

@@ -17,10 +17,13 @@ import org.theseed.metabolism.MetaModel;
  * action being taken.  All such actions require working with a starting pathway or the first
  * few compounds and then iterating through the rest.
  *
+ * Compound list actions take place in the background, so the GUI needs to be frozen against
+ * modification while it runs.
+ *
  * @author Bruce Parrello
  *
  */
-public class CompoundListAction {
+public abstract class CompoundListAction {
 
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(PathFinder.class);
@@ -75,12 +78,28 @@ public class CompoundListAction {
     }
 
     /**
-     * Ask the controlling processor to display a status message.
+     * Display a status message on the controlling GUI model manager.
      *
-     * @param string	message to display
+     * @param msg		message to display
      */
-    protected void showStatus(String string) {
-        this.processor.showMessage(string);
+    public void showStatus(String msg) {
+        this.processor.showStatus(msg);
+    }
+
+    /**
+     * Display progress on the controlling GUI model manager.
+     *
+     * @param p			progress fraction, from 0 (no progress) to 1 (completed)
+     */
+    public void showProgress(double p) {
+        this.processor.showProgress(p);
+    }
+
+    /**
+     * Record completion of the background task.
+     */
+    public void showCompleted() {
+        this.processor.showCompleted();
     }
 
 }

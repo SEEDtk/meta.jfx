@@ -9,6 +9,7 @@ import java.util.List;
 import org.theseed.meta.controllers.MetaCompound;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
+import org.theseed.shared.meta.IProgressReporter;
 
 /**
  * This interface defines the common parameters action classes need from the
@@ -17,7 +18,7 @@ import org.theseed.metabolism.Pathway;
  * @author Bruce Parrello
  *
  */
-public interface IModelManager {
+public interface IModelManager extends IProgressReporter {
 
     /**
      * @return the list of compounds to process, in order
@@ -33,13 +34,6 @@ public interface IModelManager {
      * @return the single starting pathway (can be NULL)
      */
     public Pathway getStartPathway();
-
-   /**
-     * Send a status message to the client.
-     *
-     * @param message	message to send
-     */
-    public void showMessage(String message);
 
     /**
      * @return the collection of subsystem pathways (can be NULL)

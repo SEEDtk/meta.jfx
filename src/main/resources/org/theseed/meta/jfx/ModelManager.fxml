@@ -38,9 +38,9 @@
             <Button fx:id="btnShowCommons" mnemonicParsing="false" onAction="#showCommonCompounds" prefWidth="200.0" text="Show Common Compounds" textAlignment="CENTER" />
          </children>
       </VBox>
-      <TextField fx:id="txtMessageBuffer" editable="false" maxWidth="1.7976931348623157E308" styleClass="readOnly" GridPane.columnIndex="1" GridPane.columnSpan="6" GridPane.hgrow="ALWAYS" GridPane.rowIndex="6" />
-      <Label text="Metabolic Path" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="7" />
-      <HBox alignment="CENTER" spacing="10.0" GridPane.columnIndex="2" GridPane.rowIndex="7">
+      <TextField fx:id="txtMessageBuffer" editable="false" maxWidth="1.7976931348623157E308" styleClass="readOnly" GridPane.columnIndex="1" GridPane.columnSpan="6" GridPane.hgrow="ALWAYS" GridPane.rowIndex="7" />
+      <Label text="Metabolic Path" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="8" />
+      <HBox alignment="CENTER" spacing="10.0" GridPane.columnIndex="2" GridPane.rowIndex="8">
          <children>
             <Button fx:id="btnClearPath" contentDisplay="CENTER" minWidth="50.0" mnemonicParsing="false" onAction="#clearPath" text="Clear" />
             <ChoiceBox fx:id="cmbPathStyle" prefWidth="100.0" />
@@ -49,9 +49,9 @@
             <Insets />
          </opaqueInsets>
       </HBox>
-      <TableView fx:id="tblFlowMods" prefHeight="400.0" prefWidth="400.0" GridPane.columnIndex="3" GridPane.columnSpan="2" GridPane.rowIndex="8" />
-      <Label text="Flow Modifiers" GridPane.columnIndex="3" GridPane.halignment="LEFT" GridPane.rowIndex="7" />
-      <HBox alignment="CENTER" spacing="10.0" GridPane.columnIndex="4" GridPane.rowIndex="7">
+      <TableView fx:id="tblFlowMods" prefHeight="400.0" prefWidth="400.0" GridPane.columnIndex="3" GridPane.columnSpan="2" GridPane.rowIndex="9" />
+      <Label text="Flow Modifiers" GridPane.columnIndex="3" GridPane.halignment="LEFT" GridPane.rowIndex="8" />
+      <HBox alignment="CENTER" spacing="10.0" GridPane.columnIndex="4" GridPane.rowIndex="8">
          <opaqueInsets>
             <Insets />
          </opaqueInsets>
@@ -64,7 +64,7 @@
             </HBox>
          </children>
       </HBox>
-      <ListView fx:id="lstPath" prefHeight="400.0" prefWidth="300.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="8" />
+      <ListView fx:id="lstPath" prefHeight="400.0" prefWidth="300.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="9" />
       <Label text="Saved Path File" GridPane.columnIndex="1" GridPane.rowIndex="4" GridPane.valignment="TOP" />
       <VBox prefWidth="100.0" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="4">
           <children>
@@ -102,8 +102,14 @@
             <ChoiceBox fx:id="cmbSubsysUpdateType" prefWidth="150.0" />
          </children>
       </VBox>
-      <ListView fx:id="lstSubsystem" maxHeight="1.7976931348623157E308" onMouseClicked="#showSubsysPath" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="5" GridPane.rowIndex="8" />
-      <Label text="Current Subsystem Contents" GridPane.columnIndex="5" GridPane.rowIndex="7" />
+      <ListView fx:id="lstSubsystem" maxHeight="1.7976931348623157E308" onMouseClicked="#showSubsysPath" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="5" GridPane.rowIndex="9" />
+      <Label text="Current Subsystem Contents" GridPane.columnIndex="5" GridPane.rowIndex="8" />
+      <ProgressBar fx:id="barProgress" maxWidth="1.7976931348623157E308" prefWidth="200.0" progress="0.0" GridPane.columnIndex="1" GridPane.columnSpan="5" GridPane.hgrow="ALWAYS" GridPane.rowIndex="6" />
+      <Button fx:id="btnAbort" mnemonicParsing="false" onAction="#abortCommand" text="ABORT COMMAND" textFill="RED" GridPane.columnIndex="3">
+         <font>
+            <Font name="System Bold" size="12.0" />
+         </font>
+      </Button>
    </children>
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -124,6 +130,7 @@
       <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" />
       <RowConstraints minHeight="10.0" />
       <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+      <RowConstraints minHeight="10.0" prefHeight="20.0" />
       <RowConstraints />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="200.0" vgrow="SOMETIMES" />
