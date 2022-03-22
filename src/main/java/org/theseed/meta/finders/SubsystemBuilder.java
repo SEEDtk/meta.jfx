@@ -12,6 +12,8 @@ import org.theseed.utils.ParseFailureException;
 
 import com.github.cliftonlabs.json_simple.JsonException;
 
+import javafx.concurrent.Task;
+
 /**
  * This class manages a subsystem update.  There are two types of updates, depending on
  * whether we are starting from a compound or a path.
@@ -124,5 +126,43 @@ public abstract class SubsystemBuilder extends CompoundListAction {
      * @return the pathway computed
      */
     protected abstract Pathway getPath(String target);
+
+    /**
+     * This object runs the subsystem build in the background.  Note that the status message should not be
+     * overridden after it is done, since it may contain error information.
+     *
+     * This class is odd in that the return from the operation is a boolean flag, just like the return for
+     * the task object.  The operational return, however, is not always available when we need it, so the
+     * redundant copy is necessary.
+     */
+    public class Runner extends Task<Boolean> {
+
+        /** TRUE if the build worked, else FALSE */
+        private boolean successFlag;
+
+        @Override
+        protected Boolean call() throws Exception {
+            boolean retVal = false;
+            try {
+                retVal = SubsystemBuilder.this.updateSubsystem();
+            } catch (Exception e) {
+                SubsystemBuilder.this.showStatus("Error: " + e.toString());
+                retVal = false;
+            }
+            // Save the result.
+            this.successFlag = retVal;
+            // Denote we're done.
+            SubsystemBuilder.this.showCompleted();
+            return retVal;
+        }
+
+        /**
+         * @return TRUE for success, FALSE for failure
+         */
+        public boolean getResult() {
+            return this.successFlag;
+        }
+
+    }
 
 }

@@ -680,16 +680,17 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         this.applyFlow();
         // Set up the subsystem builder of the appropriate type.
         try {
-            // TODO set up for background run
-            // Run the appropriate subsystem builder.
+            // Create the appropriate subsystem builder.
             SubsystemBuilder.Type type = this.cmbSubsysUpdateType.getSelectionModel().getSelectedItem();
             SubsystemBuilder builder = type.create(this);
-            boolean ok = builder.updateSubsystem();
-            if (ok) {
-                // The subsystem has updated, so we need to reload it.
-                this.loadSubsys(this.subsysDir);
-            }
-        } catch (IOException | ParseFailureException | JsonException e) {
+            // Run it in the background.
+            this.stopFlag = false;
+            this.enableButtons(false);
+            this.stopFlag = false;
+            var runner = builder.new Runner();
+            this.endHandler = this.new SubsystemRefresher(runner);
+            new Thread(runner).start();
+        } catch (Exception e) {
             BaseController.messageBox(AlertType.ERROR, "Error Building Subsystem", e.toString());
         }
     }
@@ -953,4 +954,38 @@ public class ModelManager extends ResizableController implements ICompoundFinder
         }
 
     }
+
+    /**
+     * This is the end-of-task handler for the completion of a subsystem build.  If the build was
+     * successful, the subsystem is redisplayed in the subsystem window.
+     */
+    private class SubsystemRefresher implements IEndHandler {
+
+        /** background task being run */
+        private SubsystemBuilder.Runner task;
+
+        /**
+         * Construct the handler for the subsystem build.
+         *
+         * @param task		background task performing the build
+         */
+        protected SubsystemRefresher(SubsystemBuilder.Runner task) {
+            this.task = task;
+        }
+
+        @Override
+        public void handleCompletion() {
+            boolean okFlag = task.getResult();
+            if (okFlag) {
+                // The subsystem has updated, so we need to reload it.
+                try {
+                    ModelManager.this.loadSubsys(ModelManager.this.subsysDir);
+                } catch (IOException | ParseFailureException | JsonException e) {
+                    BaseController.messageBox(AlertType.ERROR, "Error Displaying Subsystem", e.toString());
+                }
+            }
+        }
+
+    }
+
 }
