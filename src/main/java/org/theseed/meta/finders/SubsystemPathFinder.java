@@ -7,8 +7,9 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.theseed.basic.ParseFailureException;
 import org.theseed.metabolism.Pathway;
-import org.theseed.utils.ParseFailureException;
 
 import com.github.cliftonlabs.json_simple.JsonException;
 

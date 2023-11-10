@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
 import org.theseed.jfx.BaseController;
 import org.theseed.jfx.ResizableController;
@@ -32,7 +33,6 @@ import org.theseed.meta.finders.SubsystemBuilder;
 import org.theseed.metabolism.MetaModel;
 import org.theseed.metabolism.Pathway;
 import org.theseed.metabolism.mods.ModifierList;
-import org.theseed.utils.ParseFailureException;
 
 import com.github.cliftonlabs.json_simple.JsonException;
 
